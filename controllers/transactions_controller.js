@@ -6,7 +6,12 @@ export const getUserTransactions = async (req,res) => {
 
     try{
 
-        const getAlltransactions = await Transactions.find({ user: req.user._id });
+        const populate_options = {
+            path: 'user',
+            select: 'first_name last_name _id email profile_img phone_number'
+        }
+
+        const getAlltransactions = await Transactions.find({ user: req.user._id }).populate(populate_options);
 
         let wallet_balance;
 
@@ -42,7 +47,12 @@ export const getallUserbankaccount = async (req,res) => {
 
     try{
 
-        const getUseraccounts = await bankAccount.findOne({ user: req.user._id });
+        const populate_options = {
+            path: 'user',
+            select: 'first_name last_name _id email profile_img phone_number'
+        }
+
+        const getUseraccounts = await bankAccount.findOne({ user: req.user._id }).populate(populate_options);
 
         return res.status(200).json({
             message:"Your bank account was gotten successfully",
@@ -68,6 +78,10 @@ export const saveUserbank = async (req,res) => {
         const bank_name = req.body.bank_name
         const account_number = req.body.account_number
         const account_name = req.body.account_name
+        const populate_options = {
+            path: 'user',
+            select: 'first_name last_name _id email profile_img phone_number'
+        }
 
         if ( !bank_name || !account_number || !account_name ) {
             return res.status(400).json({
@@ -75,7 +89,7 @@ export const saveUserbank = async (req,res) => {
             })
         }
 
-        const getUseraccount = await bankAccount.findOne({ user: req.user._id });
+        const getUseraccount = await bankAccount.findOne({ user: req.user._id }).populate(populate_options);
 
         if ( getUseraccount ) {
             
@@ -124,6 +138,11 @@ export const withdrawalRequest = async (req,res) => {
 
         let withdrawalAmount = req.body.withdrawal_amount
 
+        const populate_options = {
+            path: 'user',
+            select: 'first_name last_name _id email profile_img phone_number'
+        }
+
         if ( !withdrawalAmount ) {
             return res.status(200).json({
                 message: 'withdrawal amount is required'
@@ -132,7 +151,7 @@ export const withdrawalRequest = async (req,res) => {
 
         withdrawalAmount = parseInt(withdrawalAmount,10)
 
-        const bankDetails = await bankAccount.findOne({ user: req.user._id })
+        const bankDetails = await bankAccount.findOne({ user: req.user._id }).populate(populate_options)
 
         if ( !bankDetails ) {
             return res.status(200).json({
@@ -140,7 +159,7 @@ export const withdrawalRequest = async (req,res) => {
             })
         }
 
-        const getAlltransactions = await Transactions.find({ user: req.user._id });
+        const getAlltransactions = await Transactions.find({ user: req.user._id }).populate(populate_options);
 
         if ( getAlltransactions.length < 1 ) {
             return res.status(200).json({
@@ -194,7 +213,12 @@ export const acceptwithdrawalRequest = async (req,res) => {
 
     try{
 
-        let withdrawalRequestid = req.params.id
+        let withdrawalRequestid = req.params.id;
+
+        const populate_options = {
+            path: 'user',
+            select: 'first_name last_name _id email profile_img phone_number'
+        }
 
         if ( !withdrawalRequestid ) {
             return res.status(400).json({
@@ -202,7 +226,7 @@ export const acceptwithdrawalRequest = async (req,res) => {
             })
         }
 
-        const getWithdrawalRequest = await Transactions.findById(withdrawalRequestid);
+        const getWithdrawalRequest = await Transactions.findById(withdrawalRequestid).populate(populate_options);
 
         if ( !getWithdrawalRequest ) {
             return res.status(400).json({
@@ -252,7 +276,12 @@ export const declinewithdrawalRequest = async (req,res) => {
             })
         }
 
-        const getWithdrawalRequest = await Transactions.findById(withdrawalRequestid);
+        const populate_options = {
+            path: 'user',
+            select: 'first_name last_name _id email profile_img phone_number'
+        }
+
+        const getWithdrawalRequest = await Transactions.findById(withdrawalRequestid).populate(populate_options);
 
         if ( !getWithdrawalRequest ) {
             return res.status(400).json({
@@ -266,7 +295,7 @@ export const declinewithdrawalRequest = async (req,res) => {
             })
         }
 
-        const getAlltransactions = await Transactions.find({ user: getWithdrawalRequest.user });
+        const getAlltransactions = await Transactions.find({ user: getWithdrawalRequest.user }).populate(populate_options);
 
         if ( getAlltransactions.length < 1 ) {
             return res.status(200).json({

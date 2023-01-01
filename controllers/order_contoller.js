@@ -503,14 +503,81 @@ export const trackOrder = async (req,res) => {
 
 export const getAllOrders = async (req,res) => {
 
+
+    const pageNumber = parseInt(req.query.pageNumber) || 1;
+    const pageSize = parseInt(req.query.pageSize) || 50;
+    const order_status =  req.query.order_status || null
+    const delivery_code =  req.query.delivery_code || null
+    const order_code =  req.query.order_code || null
+    
+    const minPrice = parseInt(req.query.minPrice) || 0; // Replace with the minimum price
+    const maxPrice = parseInt(req.query.maxPrice) || 500000000; // Replace with the maximum price
+
     try{
 
-        const getAllOrder = await Order.find();
+        let query = {}
+
+        if ( order_status ) {
+            query.order_status = { $regex: order_status, $options: 'i' }
+        }
+
+        if ( delivery_code ) {
+            query.delivery_code = { $regex: delivery_code, $options: 'i' }
+        }
+
+        if ( order_code ) {
+            query.order_code = { $regex: order_code, $options: 'i' }
+        }
+
+        const priceQuery = {
+            product_price_num: { $gte: minPrice, $lte: maxPrice }
+        };
+
+        const Orgquery = {  
+            $and: [
+                query,
+                // featureQuery,
+                priceQuery
+            ]
+        };
+    
+
+        const aggregationResult = await Order.aggregate([
+            // Convert product_price to a numerical value
+            {
+                $addFields: {
+                    product_price_num: { $toDouble: "$product_total" }
+                }
+            },
+            {$match:Orgquery},
+            {
+                $facet: {
+                    paginatedData: [
+                        { $skip: (pageNumber - 1) * pageSize },
+                        { $limit: pageSize },
+                        ...lookupStages
+                    ],
+                    totalCount: [
+                        { $count: "total" }
+                    ]
+                }
+            }
+
+        ]);
+
+        
+
+        const paginatedData = aggregationResult[0]?.paginatedData;
+        const totalCount = aggregationResult[0]?.totalCount[0]?.total;
+        const totalPages = Math.ceil(totalCount / pageSize);
+        const currentPage = pageNumber > totalPages ? totalPages : pageNumber;
 
         return res.status(200).json({
-            message:"All order was gotten successfuly",
-            data: getAllOrder
-        })
+            data: paginatedData,
+            currentPage,
+            totalPages,
+            totalCount
+        });
 
     }
     catch(error){
