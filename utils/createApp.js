@@ -1,0 +1,62 @@
+import express from 'express';
+import cors from 'cors';
+import morgan from 'morgan';
+// import userRoute from '../routes/user.routes.js';
+import cookieParser from 'cookie-parser';
+// import path from 'path';
+// import { fileURLToPath } from 'url';
+
+// const __filename = fileURLToPath(import.meta.url);
+// const __dirname = path.dirname(__filename);
+// const publicFolder = path.join(__dirname, '..', 'templates', 'public');
+function createApp() {
+  const app = express();
+
+  app.use(
+    cors({
+      origin: '*',
+      credentials: true
+    })
+  );
+  // app.use(cors());
+  // app.use(express.static(publicFolder));
+  app.use(express.json());
+  app.use(cookieParser());
+  app.use(express.urlencoded({ extended: true }));
+
+  if (process.env.NODE_ENV === 'development') {
+    app.use(morgan('dev'));
+  }
+
+  // app.use('/api/rate_lecturer', Lecturer_RatingRoute);
+
+  app.use((err, req, res, next) => {
+    // res.header("Access-Control-Allow-Origin", "*");
+
+    // Enabling CORS
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header(
+      'Access-Control-Allow-Methods',
+      'GET,HEAD,OPTIONS,POST,PUT, DELETE'
+    );
+    res.header(
+      'Access-Control-Allow-Headers',
+      'Origin, X-Requested-With, Content-Type, Accept, x-client-key, x-client-token, x-client-secret, Authorization'
+    );
+
+    const errorStatus = err.status || 500;
+    const errorMessage = err.message || 'Something went wrong';
+    res.status(errorStatus).json({
+      success: false,
+      status: errorStatus,
+      message: errorMessage,
+      stack: err.stack
+    });
+
+    next();
+  });
+
+  return app;
+}
+
+export default createApp;
