@@ -1,6 +1,9 @@
 import express from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
+import authRoute from '../routes/auth.routes.js'
+import userRoute from '../routes/user.routes.js'
+import categoryRoute from '../routes/category.routes.js'
 // import userRoute from '../routes/user.routes.js';
 import cookieParser from 'cookie-parser';
 // import path from 'path';
@@ -28,7 +31,9 @@ function createApp() {
     app.use(morgan('dev'));
   }
 
-  // app.use('/api/rate_lecturer', Lecturer_RatingRoute);
+  app.use('/api/auth', authRoute);
+  app.use('/api/user', userRoute);
+  app.use('/api/category', categoryRoute);
 
   app.use((err, req, res, next) => {
     // res.header("Access-Control-Allow-Origin", "*");

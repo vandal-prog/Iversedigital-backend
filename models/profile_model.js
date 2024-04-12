@@ -7,6 +7,16 @@ const ProfileSchema = new mongoose.Schema({
         ref:'User',
         unique: true,
         required: false
+    },
+    location: {
+        type: String,
+        required: false,
+        unique: false
+    },
+    birthday: {
+        type: String,
+        required:false,
+        unique: false
     }
 },{
     timestamps: true
