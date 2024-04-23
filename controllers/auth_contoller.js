@@ -8,12 +8,12 @@ export const createUser = async (req,res) => {
     try{
 
         const email = req.body.email;
-        const password = req.body.password;
+        const password_in = req.body.password;
         const first_name = req.body.first_name;
         const last_name = req.body.last_name;
         const phone_number = req.body.phone_number;
 
-        if ( !email || !password || !first_name || !last_name || !phone_number ) {
+        if ( !email || !password_in || !first_name || !last_name || !phone_number ) {
             return res.status(400).json({
                 has_error: true,
                 error:'email, password, first_name, last_name and phone_number are required',
@@ -42,7 +42,7 @@ export const createUser = async (req,res) => {
         }
 
         const salt = await bcrypt.genSalt(10);
-        const hashed_password = bcrypt.hashSync(password, salt);
+        const hashed_password = bcrypt.hashSync(password_in, salt);
 
         const newUser = new User({
             email,
@@ -60,11 +60,23 @@ export const createUser = async (req,res) => {
             user: createdUser.id
         })
 
-        await newProfile.save()
+        const createdProfile = await newProfile.save()
+
+        const generateToken = jwt.sign({ id: createdUser.id }, process.env.JWT_KEY, { expiresIn: '1d' })
+
+        const refreshToken = jwt.sign({ id: createdUser.id }, process.env.JWT_KEY, { expiresIn: '7d' })
+
+        const { password, ...info } = createdUser._doc;
 
         return res.status(202).json({
             message:'User account was created successfully',
-            has_error:false
+            has_error:false,
+            data:{
+                user: info,
+                profile:createdProfile,
+                token: generateToken,
+                refreshToken
+            }
         })
 
     }
@@ -192,12 +204,12 @@ export const createAdmin = async (req,res) => {
     try{
 
         const email = req.body.email;
-        const password = req.body.password;
+        const password_in = req.body.password;
         const first_name = req.body.first_name;
         const last_name = req.body.last_name;
         const phone_number = req.body.phone_number;
 
-        if ( !email || !password || !first_name || !last_name || !phone_number ) {
+        if ( !email || !password_in || !first_name || !last_name || !phone_number ) {
             return res.status(400).json({
                 has_error: true,
                 error:'email, password, first_name, last_name and phone_number are required',
@@ -225,7 +237,7 @@ export const createAdmin = async (req,res) => {
         }
 
         const salt = await bcrypt.genSalt(10);
-        const hashed_password = bcrypt.hashSync(password, salt);
+        const hashed_password = bcrypt.hashSync(password_in, salt);
 
         const newAdmin = new User({
             email,
@@ -243,11 +255,23 @@ export const createAdmin = async (req,res) => {
             user: createdAdmin.id
         })
 
-        await newProfile.save()
+        const createdProfile = await newProfile.save()
+
+        const generateToken = jwt.sign({ id: createdAdmin.id }, process.env.JWT_KEY, { expiresIn: '1d' })
+
+        const refreshToken = jwt.sign({ id: createdAdmin.id }, process.env.JWT_KEY, { expiresIn: '7d' })
+
+        const { password, ...info } = createdAdmin._doc;
 
         return res.status(202).json({
-            message:'Admin account was created successfully',
-            has_error:false
+            message:'User account was created successfully',
+            has_error:false,
+            data:{
+                user: info,
+                profile:createdProfile,
+                token: generateToken,
+                refreshToken
+            }
         })
 
     }
