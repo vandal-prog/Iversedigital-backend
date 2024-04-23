@@ -14,14 +14,14 @@ import { verifyAdminToken } from "../middleware/jwt.js";
 
 const router = express.Router();
 
-router.get("/create_category", verifyAdminToken, createCategory);
-router.get("/create_sub_category", verifyAdminToken, createsubCategory);
-router.get("/delete_category/:id", verifyAdminToken, deleteCategory);
-router.get("/delete_sub_category/:id", verifyAdminToken, deletesubCategory);
-router.get("/edit_category/:id", verifyAdminToken, editCategory);
-router.get("/edit_sub_category/:id", verifyAdminToken, editsubCategory);
-router.get("/category", getAllcategory);
-router.get("/category/:id", getCategory);
+router.post("/create_category", verifyAdminToken, createCategory);
+router.post("/create_sub_category", verifyAdminToken, createsubCategory);
+router.delete("/delete_category/:id", verifyAdminToken, deleteCategory);
+router.delete("/delete_sub_category/:id", verifyAdminToken, deletesubCategory);
+router.put("/edit_category/:id", verifyAdminToken, editCategory);
+router.put("/edit_sub_category/:id", verifyAdminToken, editsubCategory);
+router.get("/", getAllcategory);
+router.get("/:id", getCategory);
 router.get("/sub_category/:id", getsubCategory);
 
 

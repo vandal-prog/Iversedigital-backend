@@ -2,7 +2,6 @@ import bcrypt from 'bcrypt';
 import User from "../models/user_model.js";
 import Profile from '../models/profile_model.js';
 import jwt from 'jsonwebtoken';
-import { date } from 'yup';
 
 export const createUser = async (req,res) => {
 
@@ -12,22 +11,33 @@ export const createUser = async (req,res) => {
         const password = req.body.password;
         const first_name = req.body.first_name;
         const last_name = req.body.last_name;
+        const phone_number = req.body.phone_number;
 
-        if ( !email || !password || !first_name || !last_name ) {
+        if ( !email || !password || !first_name || !last_name || !phone_number ) {
             return res.status(400).json({
                 has_error: true,
-                error:'email, password, first_name and last_name are required',
+                error:'email, password, first_name, last_name and phone_number are required',
                 message: 'Please fill all fields'
             })
         }
 
         const CheckUser = await User.findOne({ email: email })
 
+        const CheckUserNum = await User.findOne({ phone_number: phone_number })
+
         if ( CheckUser ) {
             return res.status(403).json({
                 has_error: true,
                 error:'User with this email already exist',
                 message: 'User with this email already exist'
+              });
+        }
+
+        if ( CheckUserNum ) {
+            return res.status(403).json({
+                has_error: true,
+                error:'User with this phone number already exist',
+                message: 'User with this phone number already exist'
               });
         }
 
@@ -40,7 +50,8 @@ export const createUser = async (req,res) => {
             first_name: first_name,
             last_name: last_name,
             role: 'user',
-            isVerified: false
+            isVerified: false,
+            phone_number
         })
 
         const createdUser = await newUser.save();
@@ -106,7 +117,9 @@ export const userLogin = async (req,res) => {
 
         const getUserProfile = await Profile.findOne({ user: getUser.id });
 
-        const generateToken = jwt.sign({ id: getUser.id }, process.env.JWT_KEY)
+        const generateToken = jwt.sign({ id: getUser.id }, process.env.JWT_KEY, { expiresIn: '1d' })
+
+        const refreshToken = jwt.sign({ id: getUser.id }, process.env.JWT_KEY, { expiresIn: '7d' })
 
         const { password, ...info } = getUser._doc
 
@@ -115,9 +128,47 @@ export const userLogin = async (req,res) => {
             data:{
                 user: info,
                 profile:getUserProfile,
-                token: generateToken
+                token: generateToken,
+                refreshToken
             }
         })
+
+    }
+    catch(error){
+        console.log(error)
+        return res.status(403).json({
+            has_error: true,
+            error,
+            message: 'Something went wrong'
+          });
+    }
+
+}
+
+export const refreshToken = async (req,res) => {
+
+    try{
+
+        const refreshToken = req.body.refreshToken
+
+        if ( !refreshToken ) {
+            return res.status(400).json({
+                has_error: true,
+                error:'refreshToken is required',
+                message: 'Please fill all fields'
+            })  
+        }
+
+        jwt.verify(refreshToken, process.env.JWT_KEY, async (err, payload) => {
+            if (err) return next(createError(403, 'Token is not valid!'));
+            
+            const generateToken = jwt.sign({ id: payload.id }, process.env.JWT_KEY, { expiresIn: '1d' })
+
+            return res.status(200).json({
+                accessToken: generateToken
+            })
+
+        });
 
     }
     catch(error){
@@ -144,22 +195,32 @@ export const createAdmin = async (req,res) => {
         const password = req.body.password;
         const first_name = req.body.first_name;
         const last_name = req.body.last_name;
+        const phone_number = req.body.phone_number;
 
-        if ( !email || !password || !first_name || !last_name ) {
+        if ( !email || !password || !first_name || !last_name || !phone_number ) {
             return res.status(400).json({
                 has_error: true,
-                error:'email, password, first_name and last_name are required',
+                error:'email, password, first_name, last_name and phone_number are required',
                 message: 'Please fill all fields'
             })
         }
 
         const CheckAdmin = await User.findOne({ email: email })
+        const CheckAdminNum = await User.findOne({ phone_number: phone_number })
 
         if ( CheckAdmin ) {
             return res.status(403).json({
                 has_error: true,
                 error:'Admin with this email already exist',
                 message: 'Admin with this email already exist'
+              });
+        }
+
+        if ( CheckAdminNum ) {
+            return res.status(403).json({
+                has_error: true,
+                error:'Admin with this phone number already exist',
+                message: 'Admin with this phone number already exist'
               });
         }
 
@@ -172,7 +233,8 @@ export const createAdmin = async (req,res) => {
             first_name,
             last_name,
             role: 'admin',
-            isVerified: false
+            isVerified: false,
+            phone_number
         })
 
         const createdAdmin = await newAdmin.save();
@@ -246,7 +308,10 @@ export const loginAdmin = async (req,res) => {
 
         const getUserProfile = await Profile.findOne({ user: getUser.id });
 
-        const generateToken = jwt.sign({ id: getUser.id }, process.env.JWT_KEY)
+        const generateToken = jwt.sign({ id: getUser.id }, process.env.JWT_KEY, { expiresIn: '1d' })
+
+        const refreshToken = jwt.sign({ id: getUser.id }, process.env.JWT_KEY, { expiresIn: '7d' })
+
 
         const { password, ...info } = getUser._doc
 
@@ -255,7 +320,8 @@ export const loginAdmin = async (req,res) => {
             data:{
                 user: info,
                 profile:getUserProfile,
-                token: generateToken
+                token: generateToken,
+                refreshToken
             }
         })
 

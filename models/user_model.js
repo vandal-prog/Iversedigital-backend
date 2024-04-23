@@ -14,6 +14,10 @@ const UserSchema = new mongoose.Schema({
         type: String,
         unique: true
     },
+    phone_number: {
+        type: String,
+        unique: true
+    },
     password: {
         type: String,
         required: true
@@ -30,7 +34,7 @@ const UserSchema = new mongoose.Schema({
     role:{
         type: String,
         required: true,
-        enum:[ 'user', 'admin' ]
+        enum:[ 'user', 'admin', 'marchant' ]
     },
     isVerified:{
         type: Boolean,

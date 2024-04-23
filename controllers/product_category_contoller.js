@@ -328,7 +328,7 @@ export const getAllcategory = async (req,res) => {
             const getAllsub = await subCategory.find({ category: category.id })
 
             EditedCategories.push({
-                ...category,
+                ...category._doc,
                 sub_categories: getAllsub
             })
 
