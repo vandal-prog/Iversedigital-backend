@@ -67,6 +67,10 @@ const ProductSchema = new mongoose.Schema({
     features:{
         type: Object,
         required: true,
+    },
+    isNegotiable:{
+        type: Boolean,
+        required: false
     }
 },{
     timestamps: true

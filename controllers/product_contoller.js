@@ -17,6 +17,7 @@ export const createProduct = async (req,res) => {
         const product_category = req.body.category
         const product_subCategory = req.body.sub_category
         const product_features = req.body.product_features
+        const isNegotiable = req.body.isNegotiable
 
         if ( !product_title || 
              !product_price ||
@@ -76,7 +77,8 @@ export const createProduct = async (req,res) => {
             user: req.user._id,
             isVerified: false,
             total_bookmarks: 0,
-            features:product_features
+            features:product_features,
+            isNegotiable: isNegotiable ? true : false
         })
 
         const createdProduct = await createProduct.save();
@@ -119,6 +121,8 @@ export const editProduct = async (req,res) => {
         const product_category = req.body.category
         const product_subCategory = req.body.subCategory
         const product_features = req.body.product_features
+        const isNegotiable = req.body.isNegotiable
+
 
         const getProduct = await Product.findById(productId)
 
@@ -210,6 +214,18 @@ export const editProduct = async (req,res) => {
                 });
             }
             getProduct.subCategory = product_subCategory;
+        }
+
+        if ( isNegotiable !== null ) {
+            
+            if ( isNegotiable ) {
+                getProduct.isNegotiable = true
+            }
+
+            if ( !isNegotiable ) {
+                getProduct.isNegotiable = false
+            }
+
         }
 
         const updatedProduct = await getProduct.save();
