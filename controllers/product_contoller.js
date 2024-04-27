@@ -2,6 +2,7 @@ import { date } from 'yup';
 import Category from '../models/category_model.js';
 import subCategory from '../models/sub_category_model.js';
 import Product from '../models/product_model.js';
+import Store from '../models/store_model.js';
 
 
 export const createProduct = async (req,res) => {
@@ -12,24 +13,20 @@ export const createProduct = async (req,res) => {
         const product_price = req.body.product_price
         const product_description = req.body.product_description
         const product_images = req.body.product_images
-        const state = req.body.state
-        const lga = req.body.lga
-        const address = req.body.address
+        const store = req.body.store_id
         const product_category = req.body.category
-        const product_subCategory = req.body.subCategory
+        const product_subCategory = req.body.sub_category
+        const product_features = req.body.product_features
 
         if ( !product_title || 
              !product_price ||
              !product_description ||
-             !state ||
-             !lga ||
-             !address ||
              !product_category ||
-             !product_subCategory ) {
+             !product_subCategory || !product_features ) {
 
                 return res.status(400).json({
-                    error:'product_title, product_price, product_description, state, lga, address, product_category and product_subCategory are required',
-                    message:'product_title, product_price, product_description, state, lga, address, product_category and product_subCategory are required',
+                    error:'product_title, product_price, product_description, product_category, product_features and product_subCategory are required',
+                    message:'product_title, product_price, product_description, product_category, product_features and product_subCategory are required',
                 }); 
 
         }
@@ -43,7 +40,14 @@ export const createProduct = async (req,res) => {
 
         const categoryCheck = await Category.findById(product_category);
         const subCategoryCheck = await subCategory.findById(product_subCategory);
+        const checkStore = await Store.findById(store)
 
+        if ( !checkStore ) {
+            return res.status(400).json({
+                error:'Only store owners are allowed to create a product.',
+                message: 'Only store owners are allowed to create a product.'
+            });
+        }
 
         if ( !categoryCheck ) {
             return res.status(400).json({
@@ -64,17 +68,18 @@ export const createProduct = async (req,res) => {
             product_price,
             product_description,
             product_images,
-            address,
-            lga,
-            state,
+            address: checkStore.address,
+            area: checkStore.area,
+            state: checkStore.state,
             category: product_category,
             subCategory: product_subCategory,
             user: req.user._id,
             isVerified: false,
-            total_bookmarks: 0
+            total_bookmarks: 0,
+            features:product_features
         })
 
-        const createdProduct = await createProduct();
+        const createdProduct = await createProduct.save();
 
         return res.status(202).json({
             data: createdProduct,
@@ -93,6 +98,7 @@ export const createProduct = async (req,res) => {
 
 }
 
+
 export const editProduct = async (req,res) => {
 
     try{
@@ -108,10 +114,11 @@ export const editProduct = async (req,res) => {
         const product_description = req.body.product_description
         const product_images = req.body.product_images
         const state = req.body.state
-        const lga = req.body.lga
+        const area = req.body.lga
         const address = req.body.address
         const product_category = req.body.category
         const product_subCategory = req.body.subCategory
+        const product_features = req.body.product_features
 
         const getProduct = await Product.findById(productId)
 
@@ -122,12 +129,18 @@ export const editProduct = async (req,res) => {
             });
         }
 
-        if ( req.user._id !== getProduct.user && req.user.role !== 'admin' ) {
-            return res.status(403).json({
-                error:'You are not authenticated to perform this action',
-                message: 'You are not authenticated to perform this action'
-            });
-        }
+        console.log({
+            user_id:req.user._id,
+            user_ib: getProduct.user,
+            role: req.user.role
+        })
+
+        // if ( req.user._id !== getProduct.user && req.user.role !== 'user' ) {
+        //     return res.status(403).json({
+        //         error:'You are not authenticated to perform this action',
+        //         message: 'You are not authenticated to perform this action'
+        //     });
+        // }
 
         if ( product_title ) {
             getProduct.product_title = product_title;
@@ -150,7 +163,7 @@ export const editProduct = async (req,res) => {
                 for (let k = 0; k < product_images.length; k++) {
                     const image_det = product_images[k];
                     const TheIndex = f_images.indexOf(image_det.old);
-                    f_images.splice(TheIndex,0,image_det.new);
+                    f_images.splice(TheIndex,1,image_det.new);
                 }
 
                 getProduct.product_images = f_images
@@ -163,12 +176,16 @@ export const editProduct = async (req,res) => {
             getProduct.state = state
         }
 
-        if ( lga ) { 
-            getProduct.lga = lga
+        if ( area ) { 
+            getProduct.area = area
         }
 
         if ( address ) { 
             getProduct.address = address
+        }
+
+        if ( product_features ) {
+            getProduct.features = product_features
         }
 
         if( product_category ){
@@ -213,6 +230,7 @@ export const editProduct = async (req,res) => {
     }
 
 }
+
 
 export const deleteProduct = async (req,res) => {
 

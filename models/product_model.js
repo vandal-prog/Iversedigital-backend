@@ -36,7 +36,7 @@ const ProductSchema = new mongoose.Schema({
         required: true,
         unique: false 
     },
-    lga: {
+    area: {
         type: String,
         required: true,
         unique: false 
@@ -64,6 +64,10 @@ const ProductSchema = new mongoose.Schema({
         unique: false,
         required: true
     },
+    features:{
+        type: Object,
+        required: true,
+    }
 },{
     timestamps: true
 })

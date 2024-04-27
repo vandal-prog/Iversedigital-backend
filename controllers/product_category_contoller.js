@@ -57,11 +57,26 @@ export const createsubCategory = async (req,res) => {
         const sub_category_name = req.body.sub_category_name
         const sub_category_img = req.body.sub_category_img
         const category_id = req.body.category_id
+        const sub_category_fields = req.body.sub_category_fields
  
         if ( !sub_category_name || !sub_category_img || !category_id ) {
             return res.status(403).json({
                 error:'sub_category_name, category_id and sub_category_img are required',
                 message: 'sub_category_name, category_id and sub_category_img are required'
+            });
+        }
+
+        if ( !sub_category_fields ){
+            return res.status(403).json({
+                error:'sub_category_fields is required',
+                message: 'sub_category_fields is required'
+            });
+        }
+
+        if ( sub_category_fields.length < 1 ){
+            return res.status(403).json({
+                error:'sub_category_fields is required',
+                message: 'sub_category_fields is required'
             });
         }
 
@@ -71,8 +86,8 @@ export const createsubCategory = async (req,res) => {
 
         if ( checkIfexisting ) {
             return res.status(403).json({
-                error:'Category with this name already exist',
-                message: 'Category with this name already exist'
+                error:'sub category with this name already exist',
+                message: 'sub category with this name already exist'
             });
         }
 
@@ -86,14 +101,16 @@ export const createsubCategory = async (req,res) => {
         const newCategory = new subCategory({
             category: category_id,
             subCategory_img: sub_category_img,
-            subCategory_name: sub_category_name
+            subCategory_name: sub_category_name,
+            fields: sub_category_fields
         })
 
-        await newCategory.save()
+       const savedsubCategory = await newCategory.save()
 
         return res.status(202).json({
             message:'Sub category was created successfully',
-            has_error:false
+            has_error:false,
+            data: savedsubCategory
         })
 
     }
@@ -178,6 +195,7 @@ export const editsubCategory = async (req,res) => {
         const subCategory_name = req.body.subCategory_name
         const subCategory_img = req.body.subCategory_img
         const category_id = req.body.category_id
+        const sub_category_fields = req.body.sub_category_fields
 
         if ( !subCategory_id ) {
             return res.status(403).json({
@@ -193,6 +211,13 @@ export const editsubCategory = async (req,res) => {
                 error:'sub_category dose not exist',
                 message: 'sub_category dose not exist'
             });
+        }
+
+        if ( sub_category_fields ){
+
+            if (sub_category_fields.length > 0) {
+                getsubCategory.fields = sub_category_fields
+            }
         }
 
 

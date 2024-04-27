@@ -4,6 +4,8 @@ import morgan from 'morgan';
 import authRoute from '../routes/auth.routes.js'
 import userRoute from '../routes/user.routes.js'
 import categoryRoute from '../routes/category.routes.js'
+import productRoute from '../routes/products.routes.js'
+import cartRoute from '../routes/carts.routes.js'
 // import userRoute from '../routes/user.routes.js';
 import cookieParser from 'cookie-parser';
 // import path from 'path';
@@ -34,6 +36,8 @@ function createApp() {
   app.use('/api/auth', authRoute);
   app.use('/api/user', userRoute);
   app.use('/api/category', categoryRoute);
+  app.use('/api/product', productRoute);
+  app.use('/api/cart',cartRoute)
 
   app.use((err, req, res, next) => {
     // res.header("Access-Control-Allow-Origin", "*");
