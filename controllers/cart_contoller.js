@@ -71,6 +71,12 @@ export const Addtocart = async (req,res) => {
             });
         }
 
+        if ( cart_product.quantity_available < quantity ) {
+            return ({
+                message:"Product is currently out of stock"
+            });
+        }
+
         let getUsercart = await Cart.findOne({ user: user._id });
 
         if ( !getUsercart ) {
@@ -96,6 +102,7 @@ export const Addtocart = async (req,res) => {
                 product_price: cart_product.product_price,
                 product_images: cart_product.product_images,
                 product_description: cart_product.product_description,
+                isAvailable: cart_product.isAvailable,
                 quantity
             })
         }

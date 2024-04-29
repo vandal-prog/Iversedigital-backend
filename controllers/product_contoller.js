@@ -18,16 +18,17 @@ export const createProduct = async (req,res) => {
         const product_subCategory = req.body.sub_category
         const product_features = req.body.product_features
         const isNegotiable = req.body.isNegotiable
+        const quantity_available = req.body.quantity_available
 
         if ( !product_title || 
              !product_price ||
              !product_description ||
              !product_category ||
-             !product_subCategory || !product_features ) {
+             !product_subCategory || !product_features || !quantity_available ) {
 
                 return res.status(400).json({
-                    error:'product_title, product_price, product_description, product_category, product_features and product_subCategory are required',
-                    message:'product_title, product_price, product_description, product_category, product_features and product_subCategory are required',
+                    error:'product_title, product_price, product_description, product_category, product_features, quantity_available and product_subCategory are required',
+                    message:'product_title, product_price, product_description, product_category, product_features, quantity_available and product_subCategory are required',
                 }); 
 
         }
@@ -36,6 +37,12 @@ export const createProduct = async (req,res) => {
             return res.status(400).json({
                 error:"There should be 3 product_images",
                 message:"There should be 3 product_images",
+            })
+        }
+
+        if ( quantity_available < 1 ) {
+            return res.status(400).json({
+                message:"quantity_available should not be less than 1"
             })
         }
 
@@ -78,7 +85,9 @@ export const createProduct = async (req,res) => {
             isVerified: false,
             total_bookmarks: 0,
             features:product_features,
-            isNegotiable: isNegotiable ? true : false
+            isNegotiable: isNegotiable ? true : false,
+            quantity_available,
+            isAvailable: true
         })
 
         const createdProduct = await createProduct.save();
@@ -122,6 +131,8 @@ export const editProduct = async (req,res) => {
         const product_subCategory = req.body.subCategory
         const product_features = req.body.product_features
         const isNegotiable = req.body.isNegotiable
+        const quantity_available = req.body.quantity_available
+        const isAvailable = req.body.isAvailable
 
 
         const getProduct = await Product.findById(productId)
@@ -224,6 +235,28 @@ export const editProduct = async (req,res) => {
 
             if ( !isNegotiable ) {
                 getProduct.isNegotiable = false
+            }
+
+        }
+
+        if ( quantity_available ) {
+            
+            if ( quantity_available < 1 ) {
+                return res.status(400).json({
+                    message:"quantity_available should not be less than 1"
+                })
+            }
+
+        }
+
+        if ( isAvailable !== null ) {
+            
+            if ( isAvailable ) {
+                getProduct.isAvailable = true
+            }
+
+            if ( !isAvailable ) {
+                getProduct.isAvailable = false
             }
 
         }

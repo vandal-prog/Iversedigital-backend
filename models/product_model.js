@@ -71,6 +71,14 @@ const ProductSchema = new mongoose.Schema({
     isNegotiable:{
         type: Boolean,
         required: false
+    },
+    isAvailable:{
+        type:Boolean,
+        required: false
+    },
+    quantity_available:{
+        type: Number,
+        required: true
     }
 },{
     timestamps: true
