@@ -35,7 +35,7 @@ const ProductSchema = new mongoose.Schema({
         type: String,
         required: true,
         unique: false 
-    },
+    }, 
     area: {
         type: String,
         required: true,
