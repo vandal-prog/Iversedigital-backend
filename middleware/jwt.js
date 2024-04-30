@@ -46,6 +46,7 @@ export const verifyAdminToken = async (req, res, next) => {
     if ( getUser.role !== 'admin' ) return next(createError(403, 'Only Admin have the right to perform this action'))
 
     req.user = getUser;
+
     next();
   });
 };

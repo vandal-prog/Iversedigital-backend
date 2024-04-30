@@ -31,6 +31,8 @@ export const createCategory = async (req,res) => {
             category_img
         })
 
+        console.log('got here')
+
         await newCategory.save()
 
         return res.status(202).json({
