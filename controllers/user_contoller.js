@@ -1,4 +1,5 @@
 import Category from '../models/category_model.js';
+import Product from '../models/product_model.js';
 import Profile from '../models/profile_model.js';
 import Store from '../models/store_model.js';
 import User from '../models/user_model.js';
@@ -401,6 +402,31 @@ export const edituserStore = async (req,res) => {
         return res.status(200).json({
             message:'You ve successfully updated your store',
             data:getUserstore
+        })
+
+    }
+    catch(error){
+        console.log(error)
+        return res.status(403).json({
+            has_error: true,
+            error,
+            message: 'Something went wrong'
+        });
+    }
+
+}
+
+export const StoreProducts = async (req,res) => {
+
+    try{
+
+        const Userdet = req.user;
+
+        const storeProduct = await Product.find({ user: Userdet._id })
+
+        return res.status(200).json({
+            data: storeProduct,
+            message:'Store prouct were gotten successfully'
         })
 
     }

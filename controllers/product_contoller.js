@@ -4,6 +4,109 @@ import subCategory from '../models/sub_category_model.js';
 import Product from '../models/product_model.js';
 import Store from '../models/store_model.js';
 
+export const getAllproduct = async (req,res) => {
+
+    const pageNumber = parseInt(req.query.pageNumber) || 1;
+    const pageSize = parseInt(req.query.pageSize) || 20;
+
+    try{
+
+        // const Prod = await Product.find().skip( pageNumber * pageSize ).limit(pageSize)
+
+        // return res.status(200).json({
+        //     data: Prod
+        // })
+
+        const aggregationResult = await Product.aggregate([
+            {
+                $facet: {
+                    paginatedData: [
+                        { $skip: (pageNumber - 1) * pageSize },
+                        { $limit: pageSize }
+                    ],
+                    totalCount: [
+                        { $count: "total" }
+                    ]
+                }
+            }
+
+        ]);
+    
+
+        const paginatedData = aggregationResult[0]?.paginatedData;
+        const totalCount = aggregationResult[0]?.totalCount[0]?.total;
+        const totalPages = Math.ceil(totalCount / pageSize);
+        const currentPage = pageNumber > totalPages ? totalPages : pageNumber;
+
+        return res.status(200).json({
+            data: paginatedData,
+            currentPage,
+            totalPages,
+            totalCount
+        });
+
+        // const filterCriteria = {};
+
+        // const query_list = Object.keys(req.query);
+
+        // for (let h = 0; h < query_list.length; h++) {
+        //     const fieldName = `features.${query_list[h]}`
+        //     filterCriteria[fieldName] = req.query[query_list[h]]
+        // }
+
+        // const getProduct = await Product.find(filterCriteria)
+
+        // return res.status(200).json({
+        //     data:getProduct
+        // })
+
+    }
+    catch(error){
+        console.log(error)
+        return res.status(403).json({
+            has_error: true,
+            error,
+            message: 'Something went wrong'
+        });
+    }
+
+}
+
+export const getProductbyId = async (req,res) => {
+
+    try{
+
+        const productId = req.params.id
+
+        if ( !productId ) {
+            return res.status(400).json({
+                message: 'product id is required'
+            });
+        }
+
+        const getProduct = await Product.findById(productId);
+
+        if ( !getProduct ) {
+            return res.status(200).json({
+                data:null,
+            })
+        }
+
+        return res.status(200).json({
+            data:getProduct,
+        })
+
+    }
+    catch(error){
+        console.log(error)
+        return res.status(403).json({
+            has_error: true,
+            error,
+            message: 'Something went wrong'
+        });
+    }
+
+}
 
 export const createProduct = async (req,res) => {
 
