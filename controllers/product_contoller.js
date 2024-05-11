@@ -3,6 +3,7 @@ import Category from '../models/category_model.js';
 import subCategory from '../models/sub_category_model.js';
 import Product from '../models/product_model.js';
 import Store from '../models/store_model.js';
+import Likes from '../models/liked_product_model.js';
 
 export const getAllproduct = async (req,res) => {
 
@@ -190,7 +191,8 @@ export const createProduct = async (req,res) => {
             features:product_features,
             isNegotiable: isNegotiable ? true : false,
             quantity_available,
-            isAvailable: true
+            isAvailable: true,
+            likes:0
         })
 
         const createdProduct = await createProduct.save();
@@ -398,6 +400,142 @@ export const deleteProduct = async (req,res) => {
 
     }
     catch (error) {
+        console.log(error)
+        return res.status(403).json({
+            has_error: true,
+            error,
+            message: 'Something went wrong'
+        });
+    }
+
+}
+
+
+
+
+
+
+
+// Likes endpoint
+
+export const ReactTOproduct = async (req,res) => {
+
+    try{
+
+        const productId = req.params.id
+
+        if ( !productId ) {
+            return res.status(400).json({
+                message:'product id is required'
+            })
+        }
+
+        const getProduct = await Product.findById(productId)
+
+        if ( !getProduct ) {
+            return res.status(400).json({
+                message:'Product with that id dose not exist'
+            })
+        }
+
+        const CheckIfLiked = await Likes.findOne({ user: req.user._id, product: productId })
+
+        if ( !CheckIfLiked ) {
+            getProduct.likes = getProduct.likes + 1
+            const NewLike = new Likes({
+                user: req.user._id,
+                product: productId
+            })
+            await getProduct.save()
+            await NewLike.save()
+
+            return res.status(200).json({
+                message:'Product was liked successfully'
+            })
+        }
+
+        getProduct.likes = getProduct.likes > 1 ? getProduct.likes - 1 : 0
+
+        await Likes.findOneAndDelete({ user: req.user._id, product: productId })
+
+        return res.status(200).json({
+            message:'Product was unliked successfully'
+        })
+
+    }
+    catch(error){
+        console.log(error)
+        return res.status(403).json({
+            has_error: true,
+            error,
+            message: 'Something went wrong'
+        });
+    }
+
+}
+
+export const AlluserLikedProduct = async (req,res) => {
+
+    try{
+
+        const populate_options = {
+            path: 'product',
+            select: 'product_title product_price _id product_description product_images category subCategory'
+        };
+
+        const getUserLikedProducts = await Likes.find().populate(populate_options)
+
+        return res.status(200).json({
+            data:getUserLikedProducts,
+            message:"Liked products gotten successfully"
+        })
+
+    }
+    catch(error){
+        console.log(error)
+        return res.status(403).json({
+            has_error: true,
+            error,
+            message: 'Something went wrong'
+        }); 
+    }
+
+}
+
+export const getProductLikes = async (req,res) => {
+
+    try{
+
+        const productId = req.params.id
+
+        if ( !productId ) {
+            return res.status(400).json({
+                message:'product id is required'
+            })
+        }
+
+        const getProduct = await Product.findById(productId)
+
+        if ( !getProduct ) {
+            return res.status(400).json({
+                message:'Product with that id dose not exist'
+            })
+        }
+
+        const populate_options = {
+            path: 'user',
+            select: 'first_name last_name _id email profile_img phone_number'
+        };
+
+        const getProductlikeUser = await Likes.find().populate(populate_options)
+
+        return res.status(200).json({
+            data: getProductlikeUser,
+            message:'Users gotten successfully'
+        })
+
+    }
+    catch(error){
         console.log(error)
         return res.status(403).json({
             has_error: true,

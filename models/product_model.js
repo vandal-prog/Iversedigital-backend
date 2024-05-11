@@ -80,6 +80,11 @@ const ProductSchema = new mongoose.Schema({
     quantity_available:{
         type: Number,
         required: true
+    },
+    likes:{
+        type:Number,
+        required:true,
+        default: 0
     }
 },{
     timestamps: true

@@ -6,6 +6,8 @@ import userRoute from '../routes/user.routes.js'
 import categoryRoute from '../routes/category.routes.js'
 import productRoute from '../routes/products.routes.js'
 import cartRoute from '../routes/carts.routes.js'
+import offerRoute from '../routes/offers.routes.js'
+import callbackRoute from '../routes/callback.routes.js'
 // import userRoute from '../routes/user.routes.js';
 import cookieParser from 'cookie-parser';
 // import path from 'path';
@@ -38,6 +40,8 @@ function createApp() {
   app.use('/api/category', categoryRoute);
   app.use('/api/product', productRoute);
   app.use('/api/cart',cartRoute)
+  app.use('/api/offers',offerRoute)
+  app.use('/api/callbacks',callbackRoute)
 
   app.use((err, req, res, next) => {
     // res.header("Access-Control-Allow-Origin", "*");
