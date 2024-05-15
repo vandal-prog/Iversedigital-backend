@@ -4,6 +4,7 @@ import subCategory from '../models/sub_category_model.js';
 import Product from '../models/product_model.js';
 import Store from '../models/store_model.js';
 import Likes from '../models/liked_product_model.js';
+import ProductReviews from '../models/product_review.js';
 
 export const getAllproduct = async (req,res) => {
 
@@ -32,7 +33,7 @@ export const getAllproduct = async (req,res) => {
             }
 
         ]);
-    
+
 
         const paginatedData = aggregationResult[0]?.paginatedData;
         const totalCount = aggregationResult[0]?.totalCount[0]?.total;
@@ -85,7 +86,12 @@ export const getProductbyId = async (req,res) => {
             });
         }
 
-        const getProduct = await Product.findById(productId);
+        const populate_options = {
+            path: 'user',
+            select: 'first_name last_name _id email profile_img phone_number'
+        };
+
+        const getProduct = await Product.findById(productId).populate(populate_options);
 
         if ( !getProduct ) {
             return res.status(200).json({
@@ -124,7 +130,7 @@ export const createProduct = async (req,res) => {
         const isNegotiable = req.body.isNegotiable
         const quantity_available = req.body.quantity_available
 
-        if ( !product_title || 
+        if ( !product_title ||
              !product_price ||
              !product_description ||
              !product_category ||
@@ -133,7 +139,7 @@ export const createProduct = async (req,res) => {
                 return res.status(400).json({
                     error:'product_title, product_price, product_description, product_category, product_features, quantity_available and product_subCategory are required',
                     message:'product_title, product_price, product_description, product_category, product_features, quantity_available and product_subCategory are required',
-                }); 
+                });
 
         }
 
@@ -275,11 +281,11 @@ export const editProduct = async (req,res) => {
         }
 
         if ( product_images ) {
-            
+
             if ( product_images.length > 0 ) {
 
                 var f_images = [...getProduct.product_images];
-                
+
                 for (let k = 0; k < product_images.length; k++) {
                     const image_det = product_images[k];
                     const TheIndex = f_images.indexOf(image_det.old);
@@ -292,15 +298,15 @@ export const editProduct = async (req,res) => {
 
         }
 
-        if ( state ) { 
+        if ( state ) {
             getProduct.state = state
         }
 
-        if ( area ) { 
+        if ( area ) {
             getProduct.area = area
         }
 
-        if ( address ) { 
+        if ( address ) {
             getProduct.address = address
         }
 
@@ -309,7 +315,7 @@ export const editProduct = async (req,res) => {
         }
 
         if( product_category ){
-           
+
             const categoryCheck = await Category.findById(product_category);
 
             if ( !categoryCheck ) {
@@ -333,7 +339,7 @@ export const editProduct = async (req,res) => {
         }
 
         if ( isNegotiable !== null ) {
-            
+
             if ( isNegotiable ) {
                 getProduct.isNegotiable = true
             }
@@ -345,7 +351,7 @@ export const editProduct = async (req,res) => {
         }
 
         if ( quantity_available ) {
-            
+
             if ( quantity_available < 1 ) {
                 return res.status(400).json({
                     message:"quantity_available should not be less than 1"
@@ -355,7 +361,7 @@ export const editProduct = async (req,res) => {
         }
 
         if ( isAvailable !== null ) {
-            
+
             if ( isAvailable ) {
                 getProduct.isAvailable = true
             }
@@ -391,7 +397,7 @@ export const deleteProduct = async (req,res) => {
     try{
 
         const productId = req.params.id;
-        
+
         await Product.findByIdAndDelete(productId)
 
         return res.status(200).json({
@@ -497,7 +503,7 @@ export const AlluserLikedProduct = async (req,res) => {
             has_error: true,
             error,
             message: 'Something went wrong'
-        }); 
+        });
     }
 
 }
@@ -532,6 +538,111 @@ export const getProductLikes = async (req,res) => {
         return res.status(200).json({
             data: getProductlikeUser,
             message:'Users gotten successfully'
+        })
+
+    }
+    catch(error){
+        console.log(error)
+        return res.status(403).json({
+            has_error: true,
+            error,
+            message: 'Something went wrong'
+        });
+    }
+
+}
+
+
+
+
+// product reviews
+
+export const ReviewProduct = async (req,res) => {
+
+  try{
+
+    const user = req.user
+    const product_id = req.params.id
+    const review = req.body.review
+    const star_rating = req.body.star_rating
+
+    if ( !product_id ) {
+      return res.status(400).json({
+        message:"Product id is required"
+      })
+    }
+
+    if ( !star_rating ) {
+      return res.status(400).json({
+        message:"Star rating is required"
+      })
+    }
+
+    if ( star_rating !== 1 && star_rating !== 2 && star_rating !== 3 && star_rating !== 4 && star_rating !== 5 ) {
+      return res.status(400).json({
+        message:"Star rating shuld either be 1, 2, 3, 4, or 5"
+      })
+    }
+
+    const getProduct = Product.findById(product_id);
+
+    if ( !getProduct ) {
+      return res.status(400).json({
+        message:"Product with this id dose not exist"
+      })
+    }
+
+    const createReview = new ProductReviews({
+      user: user._id,
+      product: product_id,
+      review: review ? review : "",
+      star_rating: star_rating
+    })
+
+    const newReview = await createReview.save()
+
+    return res.status(200).json({
+        data: newReview,
+        message:"Your review was taken successfully"
+    })
+
+  }
+  catch(error){
+    console.log(error)
+    return res.status(403).json({
+        has_error: true,
+        error,
+        message: 'Something went wrong'
+    });
+  }
+
+}
+
+export const GetProductReview = async (req,res) => {
+
+    try{
+
+        const product_id = req.params.id
+    
+        if ( !product_id ) {
+          return res.status(400).json({
+            message:"Product id is required"
+          })
+        }
+    
+        const getProduct = Product.findById(product_id);
+    
+        if ( !getProduct ) {
+          return res.status(400).json({
+            message:"Product with this id dose not exist"
+          })
+        }
+
+        const getProductreviews = await ProductReviews.find({ product: product_id })
+
+        return res.status(200).json({
+            data:getProductreviews,
+            message:"Product reviews gotten successfully"
         })
 
     }

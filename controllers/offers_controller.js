@@ -33,7 +33,7 @@ export const CreateOffer = async (req,res) => {
         const ifOfferexist = await Offers.findOne({ user: req.user._id, product: productId, status: 'pending' })
 
         if ( ifOfferexist ) {
-            
+
             ifOfferexist.proposed_price = parseInt(proposed_price,10)
 
             await ifOfferexist.save()
@@ -76,10 +76,16 @@ export const GetAllMerchantOffers = async (req,res) => {
 
     try{
 
-        const populate_options = {
+        const populate_options = [
+          {
+              path: 'product',
+              // select: 'product_title product_price _id product_description product_images category subCategory'
+          },
+          ,{
             path: 'user',
-            select: 'first_name last_name _id email profile_img phone_number'
-        };
+            select: 'first_name last_name _id email profile_img phone_number',
+
+        }];
 
         const AllOffers = await Offers.find({ merchant: req.user._id }).populate(populate_options)
 
@@ -98,7 +104,7 @@ export const GetAllMerchantOffers = async (req,res) => {
         });
     }
 
-} 
+}
 
 export const getAllUsersOffers = async (req,res) => {
 
@@ -106,11 +112,11 @@ export const getAllUsersOffers = async (req,res) => {
 
         const populate_options = [{
             path: 'product',
-            select: 'product_title product_price _id product_description product_images category subCategory'
+            // select: 'product_title product_price _id product_description product_images category subCategory'
         },
         {
             path: 'merchant',
-            select: 'irst_name last_name _id email profile_img phone_number'
+            select: 'first_name last_name _id email profile_img phone_number'
         }];
 
         const AllOffers = await Offers.find({ user: req.user._id }).populate(populate_options)
@@ -127,7 +133,7 @@ export const getAllUsersOffers = async (req,res) => {
             has_error: true,
             error,
             message: 'Something went wrong'
-        }); 
+        });
     }
 
 }
@@ -207,7 +213,7 @@ export const AcceptOrDeclineOffers = async (req,res) => {
         }
 
         if ( ProductExsistingIncart.length > 0 ) {
-            
+
             const index = UserCartProducts.findIndex( product => product.product_id === getOffer.product );
 
             UserCartProducts[index] = {
@@ -224,7 +230,7 @@ export const AcceptOrDeclineOffers = async (req,res) => {
             const prod = UserCartProducts[k];
 
             let price = prod.quantity * prod.product_price;
-            
+
             Total = Total + parseInt(price,10)
         }
 
@@ -247,7 +253,7 @@ export const AcceptOrDeclineOffers = async (req,res) => {
             has_error: true,
             error,
             message: 'Something went wrong'
-        }); 
+        });
     }
 
 }

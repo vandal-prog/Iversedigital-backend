@@ -6,7 +6,9 @@ import {
   getProductbyId,
   ReactTOproduct,
   AlluserLikedProduct,
-  getProductLikes
+  getProductLikes,
+  GetProductReview,
+  ReviewProduct
 } from "../controllers/product_contoller.js";
 import { verifyUserToken } from "../middleware/jwt.js";
 
@@ -19,5 +21,7 @@ router.post("/create_product", verifyUserToken, createProduct);
 router.put("/edit_product/:id", verifyUserToken, editProduct);
 router.put("/react/:id", verifyUserToken, ReactTOproduct);
 router.get("/users_react/:id", verifyUserToken, getProductLikes);
+router.post("/review/:id", verifyUserToken, ReviewProduct);
+router.get("/product_review/:id", GetProductReview);
 
 export default router;

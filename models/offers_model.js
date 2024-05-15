@@ -30,7 +30,7 @@ const OffersSchema = new mongoose.Schema({
         ref:'User',
         unique: false,
         required: true
-    } 
+    }
 },{
     timestamps: true
 })
