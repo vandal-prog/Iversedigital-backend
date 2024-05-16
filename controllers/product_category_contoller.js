@@ -455,3 +455,30 @@ export const getsubCategory = async (req,res) => {
     }
 
 }
+
+export const getSubcategories = async (req,res) => {
+
+    try{
+
+        const populate_options = {
+            path: 'category',
+        };
+
+        const getSubcategories = await subCategory.find().populate(populate_options)
+
+        return res.status(200).json({
+            data: getSubcategories,
+            message:"All sub categories are gotten successfully"
+        })
+
+    }
+    catch(error){
+        console.log(error)
+        return res.status(403).json({
+            has_error: true,
+            error,
+            message: 'Something went wrong'
+        });
+    }
+
+}

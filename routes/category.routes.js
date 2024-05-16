@@ -9,6 +9,7 @@ import {
   getAllcategory,
   getCategory,
   getsubCategory,
+  getSubcategories
 } from "../controllers/product_category_contoller.js";
 import { verifyAdminToken } from "../middleware/jwt.js";
 
@@ -23,6 +24,7 @@ router.put("/edit_sub_category/:id", verifyAdminToken, editsubCategory);
 router.get("/", getAllcategory);
 router.get("/:id", getCategory);
 router.get("/sub_category/:id", getsubCategory);
+router.get("/all/sub_categories",getSubcategories)
 
 
 export default router;
