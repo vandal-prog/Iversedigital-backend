@@ -2,6 +2,7 @@ import Category from '../models/category_model.js';
 import Product from '../models/product_model.js';
 import Profile from '../models/profile_model.js';
 import Store from '../models/store_model.js';
+import userAddress from '../models/user_address_model.js';
 import User from '../models/user_model.js';
 import bcrypt from 'bcrypt';
 
@@ -159,6 +160,104 @@ export const resetUserpassword = async (req,res) => {
 
         return res.status(200).json({
             message: 'Password was updated successfully'
+        })
+
+    }
+    catch(error){
+        console.log(error)
+        return res.status(403).json({
+            has_error: true,
+            error,
+            message: 'Something went wrong'
+        });
+    }
+
+}
+
+export const getUseraddress = async (req,res) => {
+
+    try{
+
+        const getUserAddress = await userAddress.findOne({ user: req.user._id });
+
+        if ( !getUserAddress ) {
+            
+            const createAddress = new userAddress({
+                user: req.user._id,
+                state: '',
+                area: '',
+                address: ''
+            })
+
+            const createdAddress = await createAddress.save()
+
+            return res.status(200).json({
+                message:'Your address was gotten successfully',
+                data: createdAddress
+            })
+
+        }
+
+        return res.status(200).json({
+            message:'Your address was gotten successfully',
+            data: getUserAddress
+        })
+
+    }
+    catch(error){
+        console.log(error)
+        return res.status(403).json({
+            has_error: true,
+            error,
+            message: 'Something went wrong'
+        });
+    }
+
+}
+
+export const updateUseraddress = async (req,res) => {
+
+    try{
+
+        const state = req.body.state
+        const area = req.body.area
+        const address = req.body.address
+
+        if ( !state || !area || !address ) {
+            return res.status(400).json({
+                message:'state, area and address are required'
+            })
+        }
+
+        const getUserAddress = await userAddress.findOne({ user: req.user._id });
+
+        if ( !getUserAddress ) {
+            
+            const createAddress = new userAddress({
+                user: req.user._id,
+                state,
+                area,
+                address
+            })
+
+            const createdAddress = await createAddress.save()
+
+            return res.status(200).json({
+                message:'Your address was updated successfully',
+                data: createdAddress
+            })
+
+        }
+
+        getUserAddress.state = state
+        getUserAddress.area = area
+        getUserAddress.address = address
+
+        await getUserAddress.save()
+
+        return res.status(200).json({
+            message:'Your address was updated successfully',
+            data: getUserAddress
         })
 
     }

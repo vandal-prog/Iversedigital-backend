@@ -96,11 +96,14 @@ export const getProductbyId = async (req,res) => {
         if ( !getProduct ) {
             return res.status(200).json({
                 data:null,
+                message:'Product with this id dose not exist'
             })
         }
 
+        const getStore = await Store.findOne({ user: getProduct.user });
+
         return res.status(200).json({
-            data:getProduct,
+            data:{...getProduct._doc, store:getStore }
         })
 
     }

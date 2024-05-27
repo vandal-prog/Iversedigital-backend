@@ -1,5 +1,6 @@
 import Cart from '../models/cart_model.js';
 import Product from '../models/product_model.js';
+import Store from '../models/store_model.js';
 
 export const getUserCart = async (req,res) => {
 
@@ -69,6 +70,22 @@ export const Addtocart = async (req,res) => {
             return ({
                 message:"Product dose not exist"
             });
+        }
+
+        const getproductStore = await Store.findOne({ user: cart_product.user })
+
+        if ( !getproductStore ) {
+            return res.status(403).json({
+                    message: 'The store for this product dose not exist'
+            })
+        }
+
+        if ( getproductStore.state === '' ||
+             getproductStore.area === '' ||
+             getproductStore.address === ''  ) {
+            return res.status(403).json({
+                    message: 'The location of the store is yet to be updated'
+            })
         }
 
         if ( cart_product.quantity_available < quantity ) {

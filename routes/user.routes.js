@@ -7,7 +7,9 @@ import {
   toggleStoreOpen_Close,
   getUserstore,
   edituserStore,
-  StoreProducts
+  StoreProducts,
+  getUseraddress,
+  updateUseraddress
 } from "../controllers/user_contoller.js";
 import { verifyUserToken } from "../middleware/jwt.js";
 
@@ -21,5 +23,7 @@ router.put("/toggle_store", verifyUserToken, toggleStoreOpen_Close);
 router.get("/user_store", verifyUserToken, getUserstore);
 router.put("/edit_user_store", verifyUserToken, edituserStore);
 router.get('/user_store/products', verifyUserToken, StoreProducts )
+router.get('/address', verifyUserToken, getUseraddress )
+router.put('/address/edit', verifyUserToken, updateUseraddress )
 
 export default router;
