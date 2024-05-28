@@ -1,12 +1,17 @@
 import Cart from '../models/cart_model.js';
+import Notification from '../models/notification_model.js';
 import Order from '../models/order_model.js';
 import Product from '../models/product_model.js';
 import Store from '../models/store_model.js';
 import userAddress from '../models/user_address_model.js';
 
 
-// Before Payment
+function generateOrdercode() {
+    return(
+        Math.random().toString(36).slice(2));
+}
 
+// Before Payment
 export const createOrderpreview = async (req, res) => {
 
     try {
@@ -181,6 +186,19 @@ export const createOrder = async (req, res) => {
                 }
             })
 
+            const createNotificationMerchant = new Notification({
+                user: chekproduct.user,
+                description: `A customer just placed an order for your product`,
+                data: {
+                    product: currentProduct,
+                    user_delivery_address: getuserAddress
+                },
+                status: 'Unread',
+                Notification_type: 'Sales'
+            })
+    
+            await createNotificationMerchant.save()
+
         }
 
         let Total = 0
@@ -194,6 +212,7 @@ export const createOrder = async (req, res) => {
             Total = Total + price
         }
 
+        const generated_order_code = generateOrdercode()
 
         const createOrder = new Order({
             user: req.user._id,
@@ -204,10 +223,23 @@ export const createOrder = async (req, res) => {
             user_delivery_address: getuserAddress,
             order_status: 'Pending',
             delivery_details: {},
+            order_code: generated_order_code,          
             delivery_date: '2024-05-26T21:39:41.481Z'
         })
 
         const orderCreated = await createOrder.save();
+
+        const createNotificationUser = new Notification({
+            user: req.user._id,
+            description: `Your order ${generated_order_code} was placed successfully.`,
+            data: {
+                order: orderCreated._doc
+            },
+            status: 'Unread',
+            Notification_type: 'Order'
+        })
+
+        await createNotificationUser.save()
 
         return res.status(200).json({
             message: 'Your order was placed successfully.',

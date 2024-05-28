@@ -41,6 +41,11 @@ const OrderSchema = new mongoose.Schema({
         type: String,
         required:false,
     },
+    order_code: {
+        type: String,
+        required: false
+    }
+
 },{
     timestamps: true
 })

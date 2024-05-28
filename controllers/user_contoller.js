@@ -1,4 +1,5 @@
 import Category from '../models/category_model.js';
+import Notification from '../models/notification_model.js';
 import Product from '../models/product_model.js';
 import Profile from '../models/profile_model.js';
 import Store from '../models/store_model.js';
@@ -272,6 +273,103 @@ export const updateUseraddress = async (req,res) => {
 
 }
 
+export const getUsernotification = async (req,res) => {
+
+    try{
+
+        const getAllusernotification = await Notification.find({ user: req.user._id })
+
+        return res.status(200).json({
+            data: getAllusernotification,
+            message:'User transaction gotten successfully'
+        })
+
+    }
+    catch(error){
+        console.log(error)
+        return res.status(403).json({
+            has_error: true,
+            error,
+            message: 'Something went wrong'
+        });
+    }
+
+}
+
+export const readUsernotification = async (req,res) => {
+
+    try{
+
+        const read_type = req.body.read_type
+        const notification_id = req.body.notification_id
+    
+        if ( read_type === 'single' ) {
+            
+            if ( !notification_id ) {
+                return res.status(403).json({
+                    message:'notification_id is required'
+                })
+            }
+
+            const findNotification = await Notification.findById(notification_id)
+
+            if ( !findNotification ) {
+                return res.status(403).json({
+                    message:'Notification with this id dose not exist'
+                })
+            }
+
+            findNotification.status = 'Read'
+
+            await findNotification.save();
+
+            return res.status(200).json({
+                message:'Notification was updated successfully'
+            })
+
+        }
+
+        if ( read_type === 'all' ) {
+            
+            const findallNotification = await Notification.find({ user: req.user._id, status: 'Unread' })
+
+            if ( findallNotification.length < 1 ) {
+                return res.status(200).json({
+                    message:'Notification was updated successfully'
+                })
+            }
+
+            for (let k = 0; k < findallNotification.length; k++) {
+                const Noti = findallNotification[k];
+             
+                Noti.status = 'Read'
+
+                await Noti.save()
+                
+            }
+
+            return res.status(200).json({
+                message:'Notifications were updated successfully'
+            })
+
+        }
+
+        return res.status(200).json({
+            message:'Notifications updated successfully'
+        })
+
+    }
+    catch(error){
+        console.log(error)
+        return res.status(403).json({
+            has_error: true,
+            error,
+            message: 'Something went wrong'
+        });
+    }
+
+}
+
 export const becomeMarchant = async (req,res) => {
 
     try {
@@ -383,7 +481,6 @@ export const getUserstore = async (req,res) => {
     }
 
 }
-
 export const toggleStoreOpen_Close = async (req,res) => {
 
     try{

@@ -9,8 +9,10 @@ import {
   edituserStore,
   StoreProducts,
   getUseraddress,
-  updateUseraddress
-} from "../controllers/user_contoller.js";
+  updateUseraddress,
+  getUsernotification,
+  readUsernotification
+} from "../controllers/user_contoller.js"; 
 import { verifyUserToken } from "../middleware/jwt.js";
 
 const router = express.Router();
@@ -25,5 +27,8 @@ router.put("/edit_user_store", verifyUserToken, edituserStore);
 router.get('/user_store/products', verifyUserToken, StoreProducts )
 router.get('/address', verifyUserToken, getUseraddress )
 router.put('/address/edit', verifyUserToken, updateUseraddress )
+router.get('/notification', verifyUserToken, getUsernotification )
+router.put('/read_notification', verifyUserToken, readUsernotification )
+
 
 export default router;
