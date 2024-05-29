@@ -8,7 +8,8 @@ import {
   AlluserLikedProduct,
   getProductLikes,
   GetProductReview,
-  ReviewProduct
+  ReviewProduct,
+  getProductbystore
 } from "../controllers/product_contoller.js";
 import { verifyUserToken } from "../middleware/jwt.js";
 
@@ -23,5 +24,6 @@ router.put("/react/:id", verifyUserToken, ReactTOproduct);
 router.get("/users_react/:id", verifyUserToken, getProductLikes);
 router.post("/review/:id", verifyUserToken, ReviewProduct);
 router.get("/product_review/:id", GetProductReview);
+router.get("/store_product/:id", getProductbystore);
 
 export default router;

@@ -118,6 +118,45 @@ export const getProductbyId = async (req,res) => {
 
 }
 
+export const getProductbystore = async (req,res) => {
+
+    try{
+
+        const store_id = req.params.id
+
+        if ( !store_id ) {
+            return res.status(400).json({
+                message: 'store id is required'
+            });
+        }
+
+        const getStore = await Store.findById(store_id);
+
+        if ( !getStore ) {
+            return res.status(400).json({
+                message: 'store with this id dose not exist'
+            });
+        }
+
+        const getAllproduct = await Product.find({ user: getStore.user });
+
+        return res.status(200).json({
+            data:getAllproduct,
+            message:'Store products gotten successfully'
+        })
+
+    }
+    catch(error){
+        console.log(error)
+        return res.status(403).json({
+            has_error: true,
+            error,
+            message: 'Something went wrong'
+        });
+    }
+
+}
+
 export const createProduct = async (req,res) => {
 
     try{
@@ -137,6 +176,7 @@ export const createProduct = async (req,res) => {
              !product_price ||
              !product_description ||
              !product_category ||
+             !store ||
              !product_subCategory || !product_features || !quantity_available ) {
 
                 return res.status(400).json({
@@ -201,7 +241,8 @@ export const createProduct = async (req,res) => {
             isNegotiable: isNegotiable ? true : false,
             quantity_available,
             isAvailable: true,
-            likes:0
+            likes:0,
+            store
         })
 
         const createdProduct = await createProduct.save();

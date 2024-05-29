@@ -59,6 +59,12 @@ const ProductSchema = new mongoose.Schema({
         unique: false,
         required: true
     },
+    store:{
+        type: mongoose.Schema.Types.ObjectId,
+        ref:'Store',
+        unique: false,
+        required: true
+    },
     subCategory:{
         type: mongoose.Schema.Types.ObjectId,
         ref:'subCategory',
