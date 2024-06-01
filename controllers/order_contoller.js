@@ -1,4 +1,5 @@
 import Cart from '../models/cart_model.js';
+import merchantOrders from '../models/merchant_order_model.js';
 import Notification from '../models/notification_model.js';
 import Order from '../models/order_model.js';
 import Product from '../models/product_model.js';
@@ -153,6 +154,8 @@ export const createOrder = async (req, res) => {
 
         let order_product = []
 
+        const generated_order_code = generateOrdercode()
+
         for (let k = 0; k < getUsercartDetails.products.length; k++) {
             const currentProduct = getUsercartDetails.products[k];
 
@@ -170,11 +173,13 @@ export const createOrder = async (req, res) => {
                 continue
             }
 
+            const getProductStore = await Store.findOne({ user: chekproduct.user })
+
             chekproduct.quantity_available = chekproduct.quantity_available - currentProduct.quantity
+            chekproduct.store = getProductStore.id  
 
             await chekproduct.save()
 
-            const getProductStore = await Store.findOne({ user: chekproduct.user })
 
             order_product.push({
                 product: currentProduct,
@@ -186,12 +191,65 @@ export const createOrder = async (req, res) => {
                 }
             })
 
+            const getStoreOrders = await merchantOrders.findOne({ user: chekproduct.user })
+
+            const newStoreOrder = new merchantOrders({
+                user: chekproduct.user,
+                store: getProductStore.id,
+                order_code: generated_order_code
+            })
+
+            if ( !getStoreOrders ) {
+                
+                const createMerchantOrder = new merchantOrders({
+                    user: chekproduct.user,
+                    store: getProductStore.id,
+                    orders: [
+                        { 
+                            order_id:  generated_order_code,
+                            status: "Pending",
+                            product: currentProduct, 
+                            amount: parseInt(currentProduct.product_price,10) * currentProduct.quantity,
+                            customer: {
+                                first_name: req.user.first_name,
+                                last_name: req.user.last_name,
+                                email: req.user.email,
+                                profile_img: req.user.profile_img
+                            }
+                        }
+                    ]
+                })
+
+                await createMerchantOrder.save();
+
+            }
+
+            if ( getStoreOrders ){
+                getStoreOrders.orders = [
+                    ...getStoreOrders.orders,
+                    { 
+                        order_id:  generated_order_code,
+                        status: "Pending",
+                        product: currentProduct, 
+                        amount: parseInt(currentProduct.product_price,10) * currentProduct.quantity,
+                        customer: {
+                            first_name: req.user.first_name,
+                            last_name: req.user.last_name,
+                            email: req.user.email,
+                            profile_img: req.user.profile_img
+                        }
+                    }
+                ] 
+    
+                await getStoreOrders.save()
+            }
+
             const createNotificationMerchant = new Notification({
                 user: chekproduct.user,
                 description: `A customer just placed an order for your product`,
                 data: {
                     product: currentProduct,
-                    user_delivery_address: getuserAddress
+                    user_delivery_address: getuserAddress  
                 },
                 status: 'Unread',
                 Notification_type: 'Sales'
@@ -211,8 +269,6 @@ export const createOrder = async (req, res) => {
 
             Total = Total + price
         }
-
-        const generated_order_code = generateOrdercode()
 
         const createOrder = new Order({
             user: req.user._id,
@@ -248,6 +304,86 @@ export const createOrder = async (req, res) => {
 
     }
     catch (error) {
+        console.log(error)
+        return res.status(403).json({
+            has_error: true,
+            error,
+            message: 'Something went wrong'
+        });
+    }
+
+}
+
+export const getUserorders = async (req,res) => {
+
+    try{
+
+        const getOrders = await Order.find({ user: req.user._id })
+
+        return res.status(200).json({
+            message:'Your orders were gotten successfully',
+            data: getOrders
+        })
+
+    }
+
+    catch(error){
+        console.log(error)
+        return res.status(403).json({
+            has_error: true,
+            error,
+            message: 'Something went wrong'
+        });
+    }
+
+}
+
+export const getMerchantOrders = async (req,res) => {
+
+    try{
+
+        const getMerchOrders = await merchantOrders.fin
+
+    }
+
+    catch(error){
+        console.log(error)
+        return res.status(403).json({
+            has_error: true,
+            error,
+            message: 'Something went wrong'
+        });
+    }
+
+}
+
+export const trackOrder = async (req,res) => {
+
+    try{
+
+        const tracking_number = req.body.tracking_number
+
+        if ( !tracking_number ) {
+            return res.status(400).json({
+                message:'tracking_number is required'
+            })
+        }
+
+        const getOrderbyTrackingNumber = await Order.findOne({ order_code: tracking_number })
+
+        if ( !getOrderbyTrackingNumber ) {
+            return res.status(403).json({
+                message:'Order with tracking number dose not exist'
+            })
+        }
+
+        return res.status(200).json({
+            message:'Your order details were gotten successfully',
+            data: getOrderbyTrackingNumber
+        })
+
+    }
+    catch(error){
         console.log(error)
         return res.status(403).json({
             has_error: true,
