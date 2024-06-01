@@ -191,58 +191,22 @@ export const createOrder = async (req, res) => {
                 }
             })
 
-            const getStoreOrders = await merchantOrders.findOne({ user: chekproduct.user })
-
             const newStoreOrder = new merchantOrders({
                 user: chekproduct.user,
                 store: getProductStore.id,
-                order_code: generated_order_code
+                order_code: generated_order_code,
+                customer: {
+                    first_name: req.user.first_name,
+                    last_name: req.user.last_name,
+                    email: req.user.email,
+                    profile_img: req.user.profile_img ? req.user.profile_img : ''
+                },
+                order_status:'Pending',
+                product: currentProduct,
+                quantity: currentProduct.quantity
             })
 
-            if ( !getStoreOrders ) {
-                
-                const createMerchantOrder = new merchantOrders({
-                    user: chekproduct.user,
-                    store: getProductStore.id,
-                    orders: [
-                        { 
-                            order_id:  generated_order_code,
-                            status: "Pending",
-                            product: currentProduct, 
-                            amount: parseInt(currentProduct.product_price,10) * currentProduct.quantity,
-                            customer: {
-                                first_name: req.user.first_name,
-                                last_name: req.user.last_name,
-                                email: req.user.email,
-                                profile_img: req.user.profile_img
-                            }
-                        }
-                    ]
-                })
-
-                await createMerchantOrder.save();
-
-            }
-
-            if ( getStoreOrders ){
-                getStoreOrders.orders = [
-                    ...getStoreOrders.orders,
-                    { 
-                        order_id:  generated_order_code,
-                        status: "Pending",
-                        product: currentProduct, 
-                        amount: parseInt(currentProduct.product_price,10) * currentProduct.quantity,
-                        customer: {
-                            first_name: req.user.first_name,
-                            last_name: req.user.last_name,
-                            email: req.user.email,
-                            profile_img: req.user.profile_img
-                        }
-                    }
-                ] 
-    
-                await getStoreOrders.save()
-            }
+            await newStoreOrder.save()
 
             const createNotificationMerchant = new Notification({
                 user: chekproduct.user,
@@ -342,7 +306,12 @@ export const getMerchantOrders = async (req,res) => {
 
     try{
 
-        const getMerchOrders = await merchantOrders.fin
+        const getMerchOrders = await merchantOrders.find({ user: req.user._id });
+
+        return res.status(200).json({
+            message:'Your orders were gotten successfully',
+            data: getMerchOrders
+        })
 
     }
 
