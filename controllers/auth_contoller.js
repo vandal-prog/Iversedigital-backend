@@ -360,3 +360,21 @@ export const loginAdmin = async (req,res) => {
     }
 
 }
+
+
+// Rider routes
+
+export const createRider = async (req,res) => {
+
+    try{}
+
+    catch(error){
+        console.log(error)
+        return res.status(403).json({
+            has_error: true,
+            error,
+            message: 'Something went wrong'
+          });
+    }
+
+}
