@@ -1,8 +1,8 @@
 import riderDetails from "../models/riders_details_model.js"
-import { working_days } from "../utils/special_variables.js"
+import { all_vehicle_type, working_days, working_hours } from "../utils/special_variables.js"
 
 
-const createRiderdetails = async ( req, res ) => {
+export const createRiderdetails = async ( req, res ) => {
 
     try{
 
@@ -22,7 +22,6 @@ const createRiderdetails = async ( req, res ) => {
         const working_days_inserted = req.body.working_days
         const start_hour = req.body.start_hour
         const end_hour = req.body.end_hour
-        const delivery_ratings = req.body.delivery_ratings
 
         if ( 
             !state ||
@@ -40,38 +39,14 @@ const createRiderdetails = async ( req, res ) => {
             !drivers_license_images_back ||
             !working_days_inserted ||
             !start_hour ||
-            !end_hour ||
-            !delivery_ratings
+            !end_hour 
              ) {
                 return res.status(400).json({
                     message:'Please fill all fields'
                 })
             }
 
-            if ( vehicle_pictures.length < 2 ) {
-                return res.status(400).json({
-                    message:'vehicle_pictures should be more than 2'
-                })
-            }
-
-            if( working_days_inserted.length < 1 ){
-                return res.status(400).json({
-                    message:'working_days should be more than 1'
-                })
-            }
-
-            var daysSet = new Set(working_days);
-
-            for (let day of working_days_inserted) {
-                // If any day is not in the workingDaysSet, return false immediately
-                if (!daysSet.has(day)) {
-                  return res.status(200).json({
-                    message:'invalid days in working_days array'
-                  })
-                }
-            }
-
-            const checkIfdetailsExisting = await riderDetails({ user: req.user._id })
+            const checkIfdetailsExisting = await riderDetails.findOne({ user: req.user._id })
 
             if ( checkIfdetailsExisting ) {
                 return res.status(400).json({
@@ -79,12 +54,55 @@ const createRiderdetails = async ( req, res ) => {
                 })
             }
 
+            if ( vehicle_pictures.length < 2 ) {
+                return res.status(400).json({
+                    message:'vehicle_pictures should not be less than 2'
+                })
+            }
+
+            if( working_days_inserted.length < 1 ){
+                return res.status(400).json({
+                    message:'no working days was selected'
+                })
+            }
+
+            var daysSet = new Set(working_days);
+            var hoursSet = new Set(working_hours);
+            var vehicleSet = new Set(all_vehicle_type);
+
+            if (!hoursSet.has(start_hour)) {
+                return res.status(200).json({
+                    message:'invalid start hour'
+                })
+            }
+
+            if (!hoursSet.has(end_hour)) {
+                return res.status(200).json({
+                    message:'invalid end hour'
+                })
+            }
+
+            if (!vehicleSet.has(vehicle_type)) {
+                return res.status(200).json({
+                    message:'invalid vehicle type'
+                })
+            }
+
+            for (let day of working_days_inserted) {
+
+                if (!daysSet.has(day)) {
+                  return res.status(200).json({
+                    message:'invalid days in working_days array'
+                  })
+                }
+            }
+
             const createDetails = new riderDetails({
                 user: req.user._id,
                 state,
                 area,
                 address,
-                nin_identification_number,
+                nin_identification_number: parseInt(nin_identification_number,10) ,
                 nin_identification_slip:{
                     front: nin_identification_slip_front,
                     back: nin_identification_slip_back
@@ -101,9 +119,16 @@ const createRiderdetails = async ( req, res ) => {
                 working_days: working_days_inserted,
                 delivery_ratings: 0, 
                 driver_status:'offline',
-                
+                end_hour,
+                start_hour,
             })
+
+            const createdRiderdetails = await createDetails.save();
             
+            return res.status(200).json({
+                message:'Rider details have been saved successfully',
+                data: createdRiderdetails
+            })
 
         }
 
