@@ -114,7 +114,6 @@ export const createOrderpreview = async (req, res) => {
     }
 
 }
-
 // After payment
 
 export const createOrder = async (req, res) => {
