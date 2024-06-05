@@ -481,6 +481,7 @@ export const getUserstore = async (req,res) => {
     }
 
 }
+
 export const toggleStoreOpen_Close = async (req,res) => {
 
     try{

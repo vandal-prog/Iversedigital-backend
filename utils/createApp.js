@@ -9,6 +9,7 @@ import cartRoute from '../routes/carts.routes.js'
 import offerRoute from '../routes/offers.routes.js'
 import callbackRoute from '../routes/callback.routes.js'
 import orderRoute from '../routes/order.routes.js'
+// import riderRoute from '../routes/order.routes.js'
 // import userRoute from '../routes/user.routes.js';
 import cookieParser from 'cookie-parser';
 // import path from 'path';
