@@ -1,4 +1,5 @@
 import riderDetails from "../models/riders_details_model.js"
+import { working_days } from "../utils/special_variables.js"
 
 
 const createRiderdetails = async ( req, res ) => {
@@ -18,7 +19,7 @@ const createRiderdetails = async ( req, res ) => {
         const drivers_license_number = req.body.drivers_license_number
         const drivers_license_images_front = req.body.drivers_license_images_front
         const drivers_license_images_back = req.body.drivers_license_images_back
-        const working_days = req.body.working_days
+        const working_days_inserted = req.body.working_days
         const start_hour = req.body.start_hour
         const end_hour = req.body.end_hour
         const delivery_ratings = req.body.delivery_ratings
@@ -37,7 +38,7 @@ const createRiderdetails = async ( req, res ) => {
             !drivers_license_number ||
             !drivers_license_images_front ||
             !drivers_license_images_back ||
-            !working_days ||
+            !working_days_inserted ||
             !start_hour ||
             !end_hour ||
             !delivery_ratings
@@ -53,21 +54,21 @@ const createRiderdetails = async ( req, res ) => {
                 })
             }
 
-            if( working_days.length < 1 ){
+            if( working_days_inserted.length < 1 ){
                 return res.status(400).json({
                     message:'working_days should be more than 1'
                 })
             }
 
-            var daysSet = new Set(days);
+            var daysSet = new Set(working_days);
 
-            for (let k = 0; k < working_days.length; k++) {
-                const day = working_days[k];
-
-                if ( day !== '' ) {
-                    
+            for (let day of working_days_inserted) {
+                // If any day is not in the workingDaysSet, return false immediately
+                if (!daysSet.has(day)) {
+                  return res.status(200).json({
+                    message:'invalid days in working_days array'
+                  })
                 }
-                
             }
 
             const checkIfdetailsExisting = await riderDetails({ user: req.user._id })
@@ -96,8 +97,11 @@ const createRiderdetails = async ( req, res ) => {
                 drivers_license_images:{
                     front: drivers_license_images_front,
                     back: drivers_license_images_back
-                }
-
+                }, 
+                working_days: working_days_inserted,
+                delivery_ratings: 0, 
+                driver_status:'offline',
+                
             })
             
 
