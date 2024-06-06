@@ -17,6 +17,12 @@ export const createOrderpreview = async (req, res) => {
 
     try {
 
+        // await Order.deleteMany({ order_status: 'Pending' });
+
+        // return res.status(200).json({
+        //     message:"Order was deleted successfully"
+        // })
+
         const getUsercartDetails = await Cart.findOne({ user: req.user._id });
         const getuserAddress = await userAddress.findOne({ user: req.user._id })
 
@@ -172,22 +178,40 @@ export const createOrder = async (req, res) => {
                 continue
             }
 
-            const getProductStore = await Store.findOne({ user: chekproduct.user })
+            const populate_options = {
+                path: 'user',
+                select: 'first_name last_name _id email profile_img phone_number'
+            };
+
+            const getProductStore = await Store.findOne({ user: chekproduct.user }).populate(populate_options)
+
+            // return res.status(200).json({
+            //     data: getProductStore.user
+            // })
 
             chekproduct.quantity_available = chekproduct.quantity_available - currentProduct.quantity
             chekproduct.store = getProductStore.id  
 
             await chekproduct.save()
 
-
             order_product.push({
+                id: k,
                 product: currentProduct,
                 store_details: {
+                    store_name: getProductStore ? getProductStore.store_name : null,
                     state: getProductStore ? getProductStore.state : null,
                     area: getProductStore ? getProductStore.area : null,
                     address: getProductStore ? getProductStore.address : null,
-                    is_Opened: getProductStore ? getProductStore.is_Opened : false
-                }
+                    is_Opened: getProductStore ? getProductStore.is_Opened : false,
+                    store_owner_details: getProductStore ? {
+                        id: getProductStore.user._id,
+                        first_name: getProductStore.user.first_name,
+                        last_name: getProductStore.user.last_name,
+                        email: getProductStore.user.email,
+                        phone_number: getProductStore.user.phone_number
+                    } : null
+                },
+                product_status: 'Pending'
             })
 
             const newStoreOrder = new merchantOrders({
@@ -262,7 +286,10 @@ export const createOrder = async (req, res) => {
 
         return res.status(200).json({
             message: 'Your order was placed successfully.',
-            data: orderCreated
+            data: {
+                orderCreated,
+                unQualifiedProducts
+            }
         })
 
     }
@@ -348,6 +375,29 @@ export const trackOrder = async (req,res) => {
         return res.status(200).json({
             message:'Your order details were gotten successfully',
             data: getOrderbyTrackingNumber
+        })
+
+    }
+    catch(error){
+        console.log(error)
+        return res.status(403).json({
+            has_error: true,
+            error,
+            message: 'Something went wrong'
+        });
+    }
+
+}
+
+export const getAllOrders = async (req,res) => {
+
+    try{
+
+        const getAllOrder = await Order.find();
+
+        return res.status(200).json({
+            message:"All order was gotten successfuly",
+            data: getAllOrder
         })
 
     }
