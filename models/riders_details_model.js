@@ -76,7 +76,7 @@ const riderDetailsSchema = new mongoose.Schema({
         enum: [ 0 , 1, 2, 3, 4, 5 ],
         required: false
     },
-    driver_status: {
+    rider_status: {
         type: String, 
         enum: [ 'offline', 'online', 'in_transit' ]
     }

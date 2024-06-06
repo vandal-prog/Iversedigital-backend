@@ -263,7 +263,13 @@ export const createOrder = async (req, res) => {
             product_total: Total,
             service_charge: 10,
             delivery_fee: 400,
-            user_delivery_address: getuserAddress,
+            user_delivery_address: {
+                ...getuserAddress._doc,
+                first_name:  req.user.first_name,
+                last_name:  req.user.last_name,
+                email: req.user.email,
+                phone_number: req.user.phone_number
+            },
             order_status: 'Pending',
             delivery_details: {},
             order_code: generated_order_code,          

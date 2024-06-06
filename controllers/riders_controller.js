@@ -124,7 +124,7 @@ export const createRiderdetails = async ( req, res ) => {
                 }, 
                 working_days: working_days_inserted,
                 delivery_ratings: 0, 
-                driver_status:'offline',
+                rider_status:'offline',
                 end_hour,
                 start_hour,
             })
@@ -148,7 +148,6 @@ export const createRiderdetails = async ( req, res ) => {
         }
 
 }
-
 
 export const editRiderdetails = async ( req, res ) => {
 
@@ -291,7 +290,7 @@ export const acceptOrder = async (req,res) => {
             })  
         }
 
-        if ( getRiderextradet.driver_status === 'in_transit' ) {
+        if ( getRiderextradet.rider_status === 'in_transit' ) {
             return res.status(403).json({
                 message:"You cannot accept order while delivering an order"
             })  
@@ -355,7 +354,7 @@ export const acceptOrder = async (req,res) => {
 
         await createNotificationUser.save()
 
-        getRiderextradet.driver_status = 'in_transit'
+        getRiderextradet.rider_status = 'in_transit'
 
         await getRiderextradet.save()
 
@@ -542,9 +541,17 @@ export const finalDelivery = async ( req, res ) => {
 
         const orderId = req.params.id
 
+        const getRiderdetails = await riderDetails.findOne({ user: req.user._id });
+
         if ( !orderId ) {
             return res.status(400).json({
                 message:"order id is required"
+            })
+        }
+
+        if ( !getRiderdetails ) {
+            return res.status(403).json({
+                message:"Only verified riders can accept orders"
             })
         }
 
@@ -585,12 +592,41 @@ export const finalDelivery = async ( req, res ) => {
             Notification_type: 'Delivery'
         })
 
+        await createNotificationUser.save()
+
        const UpdatedOrder = await getOrder.save()
+
+       getRiderdetails.rider_status = 'online'
+
+       await getRiderdetails.save();
 
        return res.status(200).json({
             message:'Order was updated successfully',
             data: UpdatedOrder
        })
+
+    }
+    catch(error){
+        console.log(error)
+        return res.status(403).json({
+            has_error: true,
+            error,
+            message: 'Something went wrong'
+        });
+    }
+
+}
+
+export const getAllDelivered = async ( req, res ) => {
+
+    try{
+
+        const activeOrder = await Order.find({ order_status: 'Delivered', 'rider_details.rider_id': req.user._id  })
+
+        return res.status(200).json({
+            message:'Your delivered orders were gotten successsfully',
+            data: activeOrder
+        })
 
     }
     catch(error){
