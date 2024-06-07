@@ -194,10 +194,7 @@ export const refreshToken = async (req,res) => {
 
 }
 
-
-
 // Admin routes
-
 
 export const createAdmin = async (req,res) => {
 
@@ -361,7 +358,6 @@ export const loginAdmin = async (req,res) => {
 
 }
 
-
 // Rider routes
 
 export const createRider = async (req,res) => {
@@ -410,7 +406,7 @@ export const createRider = async (req,res) => {
             first_name,
             last_name,
             role: 'rider',
-            isVerified: false,
+            isVerified: true,
             phone_number
         })
 
@@ -451,7 +447,6 @@ export const createRider = async (req,res) => {
     }
 
 }
-
 
 export const loginRider = async (req,res) => {
 

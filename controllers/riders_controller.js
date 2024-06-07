@@ -1,6 +1,8 @@
+import merchantOrders from "../models/merchant_order_model.js";
 import Notification from "../models/notification_model.js"
 import Order from "../models/order_model.js"
 import riderDetails from "../models/riders_details_model.js"
+import Transactions from "../models/transactions_model.js";
 import { all_vehicle_type, working_days, working_hours } from "../utils/special_variables.js"
 
 
@@ -563,11 +565,11 @@ export const finalDelivery = async ( req, res ) => {
             }) 
         }
 
-        if ( getOrder.order_status !== 'Order-accepted' && getOrder.order_status !== 'In-transit' ) {
-            return res.status(403).json({
-                message:"you can only update accepted order or order that is currently in transit"
-            }) 
-        }
+        // if ( getOrder.order_status !== 'Order-accepted' && getOrder.order_status !== 'In-transit' ) {
+        //     return res.status(403).json({
+        //         message:"you can only update accepted order or order that is currently in transit"
+        //     }) 
+        // }
 
         const allOrderproducts = [...getOrder.products]
 
@@ -580,6 +582,58 @@ export const finalDelivery = async ( req, res ) => {
         }
 
         getOrder.order_status = 'Delivered'
+
+        for (let j = 0; j < getOrder.products.length; j++) {
+
+
+            const product = getOrder.products[j];
+
+            const amount = parseInt(product.product.product_price,10) * parseInt(product.product.quantity,10)
+            
+            const getStoretransactions = await Transactions.find({ user: product.store_details.store_owner_details.id })
+
+            if ( getStoretransactions.length > 0 ) {
+
+                const lastTransaction = getStoretransactions[ getStoretransactions.length - 1 ];
+
+                const createTransaction = new Transactions({
+                    user: product.store_details.store_owner_details.id,
+                    amount,
+                    balance_after: lastTransaction.balance_after + amount,
+                    balance_before: lastTransaction.balance_after,
+                    description: `Sale of ${ product.product.product_title } (${product.product.quantity})`,
+                    transaction_status: 'success',
+                    transaction_type: 'credit',
+                })
+
+                await createTransaction.save();
+
+            }
+
+            if ( getStoretransactions.length < 1 ) {
+
+                const createTransaction = new Transactions({
+                    user: product.store_details.store_owner_details.id,
+                    amount,
+                    balance_after: amount,
+                    balance_before: 0,
+                    description: `Sale of ${ product.product.product_title } (${product.product.quantity})`,
+                    transaction_status: 'success',
+                    transaction_type: 'credit',
+                })
+
+                await createTransaction.save();
+
+            }
+
+            const getMerchantOrder = await merchantOrders.findOne({ order_code: getOrder.order_code });
+
+            if ( getMerchantOrder ) {
+                getMerchantOrder.order_status = 'Delivered'
+                await getMerchantOrder.save()
+            }
+
+        }
 
         const createNotificationUser = new Notification({
             user: getOrder.user,
@@ -594,16 +648,54 @@ export const finalDelivery = async ( req, res ) => {
 
         await createNotificationUser.save()
 
-       const UpdatedOrder = await getOrder.save()
+        const UpdatedOrder = await getOrder.save()
 
-       getRiderdetails.rider_status = 'online'
+        const amount = parseInt(getOrder.delivery_fee,10)
+            
+        const getRidertransactions = await Transactions.find({ user: getOrder.rider_details.rider_id })
 
-       await getRiderdetails.save();
+        if ( getRidertransactions.length > 0 ) {
 
-       return res.status(200).json({
-            message:'Order was updated successfully',
-            data: UpdatedOrder
-       })
+            const lastTransaction = getRidertransactions[ getRidertransactions.length - 1 ];
+
+            const createTransaction = new Transactions({
+                user: req.user._id,
+                amount,
+                balance_after: lastTransaction.balance_after + amount,
+                balance_before: lastTransaction.balance_after,
+                description: `Order ${getOrder.order_code} delivery`,
+                transaction_status: 'success',
+                transaction_type: 'credit',
+            })
+
+            await createTransaction.save();
+
+        }
+
+        if ( getRidertransactions.length < 1 ) {
+
+            const createTransaction = new Transactions({
+                user: req.user._id,
+                amount,
+                balance_after: amount,
+                balance_before: 0,
+                description: `Order ${getOrder.order_code} delivery`,
+                transaction_status: 'success',
+                transaction_type: 'credit',
+            })
+
+            await createTransaction.save();
+
+        }
+
+        getRiderdetails.rider_status = 'online'
+
+        await getRiderdetails.save();
+
+        return res.status(200).json({
+                message:'Order was updated successfully',
+                data: UpdatedOrder
+        })
 
     }
     catch(error){
