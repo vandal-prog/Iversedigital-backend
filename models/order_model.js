@@ -31,9 +31,9 @@ const OrderSchema = new mongoose.Schema({
     order_status:{
         type: String,
         required:false,
-        enum:[ 'Pending', 'Created', 'Delivered', 'In-transit' ]
+        enum:[ 'Pending', 'Created', 'Delivered', 'In-transit', 'Order-accepted']
     },
-    delivery_details:{
+    rider_details:{
         type: Object,
         required:false,
     },
@@ -44,7 +44,11 @@ const OrderSchema = new mongoose.Schema({
     order_code: {
         type: String,
         required: false
-    }
+    },
+    delivery_code:{
+        type: String,
+        required: false
+    } 
 
 },{
     timestamps: true

@@ -50,3 +50,29 @@ export const verifyAdminToken = async (req, res, next) => {
     next();
   });
 };
+
+export const verifyRiderToken = async (req, res, next) => {
+
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader) return next(createError(401, 'You are not authenticated!'));
+
+  const token = authHeader.split(' ')[1];
+  const token_keyword = authHeader.split(' ')[0];
+
+  if ( token_keyword !== 'Bearer' ) return next(createError(401, 'You are not authenticated!'))
+
+  jwt.verify(token, process.env.JWT_KEY, async (err, payload) => {
+    if (err) return next(createError(403, 'Token is not valid!'));
+
+    const getUser = await User.findById(payload.id)
+
+    if ( !getUser ) return next(createError(403, 'Invalid User Token!'))
+
+    if ( getUser.role !== 'rider' ) return next(createError(403, `Only a rider's account have the right to perform this action`))
+
+    req.user = getUser;
+
+    next();
+  });
+};

@@ -21,7 +21,7 @@ const NotificationSchema = new mongoose.Schema({
         type: String,
         required:false,
         unique: false,
-        enum: [ 'Order', 'Sales', 'Notice' ]
+        enum: [ 'Order', 'Sales', 'Notice', 'Delivery' ]
     } ,
     data: {
         type: Object,

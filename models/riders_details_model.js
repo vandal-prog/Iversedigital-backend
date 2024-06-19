@@ -1,5 +1,7 @@
 import mongoose from 'mongoose';
-import { working_days } from '../utils/special_variables';
+// import { working_days } from '../utils/special_variables';
+
+const working_days = [ 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday' ]
 
 const riderDetailsSchema = new mongoose.Schema({
 
@@ -39,7 +41,7 @@ const riderDetailsSchema = new mongoose.Schema({
         required: false
     },
     vehicle_pictures: {
-        type: Array,
+        type: [String],
         required: false
     },
     vehicle_plate_number:{
@@ -55,7 +57,7 @@ const riderDetailsSchema = new mongoose.Schema({
         required: false
     },
     working_days:{
-        type:String,
+        type:[String],
         enum: working_days,
         required: false
     },
@@ -74,7 +76,7 @@ const riderDetailsSchema = new mongoose.Schema({
         enum: [ 0 , 1, 2, 3, 4, 5 ],
         required: false
     },
-    driver_status: {
+    rider_status: {
         type: String, 
         enum: [ 'offline', 'online', 'in_transit' ]
     }
