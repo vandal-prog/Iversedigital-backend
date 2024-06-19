@@ -530,7 +530,7 @@ export const AlluserLikedProduct = async (req,res) => {
 
         const populate_options = {
             path: 'product',
-            select: 'product_title product_price _id product_description product_images category subCategory'
+            select: ''
         };
 
         const getUserLikedProducts = await Likes.find().populate(populate_options)
