@@ -138,10 +138,11 @@ export const getProductbystore = async (req,res) => {
             });
         }
 
-        const getAllproduct = await Product.find({ user: getStore.user });
+        const getAllproduct = await Product.find({ user: getStore.user }).populate();
 
         return res.status(200).json({
             data:getAllproduct,
+            store: getStore,
             message:'Store products gotten successfully'
         })
 

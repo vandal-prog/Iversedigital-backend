@@ -20,7 +20,7 @@ export const SellerMetric = async (req,res) => {
 
         let totalSales = 0
 
-        const getTotalSales = await merchantOrders.find({ order_status: 'Delivered' })
+        const getTotalSales = await merchantOrders.find({ store: getUserstore._id, order_status: 'Delivered' })
 
         for (let k = 0; k < getTotalSales.length; k++) {
             const theOrder = getTotalSales[k];
