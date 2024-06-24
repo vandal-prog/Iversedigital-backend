@@ -122,3 +122,51 @@ export const GetAllUsersCallbacks = async (req,res) => {
 
 } 
 
+export const UpdateCallback = async (req,res) => {
+
+    try{
+
+        const callback_id = req.params.id
+        const status = req.body.status
+
+
+        if ( !callback_id || !status ) {
+            return res.status(400).json({
+                message:"callback_id and status are required"
+            })
+        }
+
+        if ( status !== 'accepted' && status !== 'declined' ) {
+            return res.status(400).json({
+                message:"status should either be accepted or declined"
+            })
+        }
+
+        const getCallback = await Callback.findById(callback_id);
+
+        if ( !getCallback ) {
+            return res.status(403).json({
+                message:"callback with this id dose not exist"
+            })
+        }
+
+        getCallback.status = status
+
+        await getCallback.save();
+
+        return res.status(200).json({
+            message: 'Callback was updated successfully',
+            data: getCallback
+        })
+
+    }
+    catch(error){
+        console.log(error)
+        return res.status(403).json({
+            error,
+            message: 'Something went wrong'
+        });
+    }
+
+}
+

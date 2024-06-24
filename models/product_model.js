@@ -65,6 +65,11 @@ const ProductSchema = new mongoose.Schema({
         unique: false,
         required: true
     },
+    product_status:{
+        type: String,
+        required:false,
+        enum:[ 'pending', 'declined', 'approved']
+    },
     subCategory:{
         type: mongoose.Schema.Types.ObjectId,
         ref:'subCategory',

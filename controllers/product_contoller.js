@@ -242,7 +242,8 @@ export const createProduct = async (req,res) => {
             quantity_available,
             isAvailable: true,
             likes:0,
-            store
+            store,
+            product_status: 'pending'
         })
 
         const createdProduct = await createProduct.save();

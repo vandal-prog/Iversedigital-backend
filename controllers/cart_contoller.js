@@ -72,6 +72,12 @@ export const Addtocart = async (req,res) => {
             });
         }
 
+        if ( cart_product.product_status !== 'approved' ) {
+            return ({
+                message:"Product is yet to be approved by the admin"
+            });
+        }
+
         const getproductStore = await Store.findOne({ user: cart_product.user })
 
         if ( !getproductStore ) {
