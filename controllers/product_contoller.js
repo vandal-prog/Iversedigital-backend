@@ -684,7 +684,12 @@ export const GetProductReview = async (req,res) => {
           })
         }
 
-        const getProductreviews = await ProductReviews.find({ product: product_id })
+        const populate_options = {
+            path: 'user',
+            select:'first_name last_name email profile_img phone_number'
+        }
+
+        const getProductreviews = await ProductReviews.find({ product: product_id }).populate(populate_options)
 
         return res.status(200).json({
             data:getProductreviews,
