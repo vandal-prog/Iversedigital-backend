@@ -63,6 +63,10 @@ const StoreSchema = new mongoose.Schema({
         type: Boolean,
         unique:false,
         required:false
+    },
+    is_Verified: {
+        type: Boolean,
+        default: false
     }
 },{
     timestamps: true

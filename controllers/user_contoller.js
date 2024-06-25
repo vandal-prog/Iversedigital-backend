@@ -434,7 +434,8 @@ export const becomeMarchant = async (req,res) => {
             is_Available: true,
             has_rider: has_rider ? true : false,
             isCAC_verified: isCAC_verified ? true : false,
-            CAC_number: CAC_number ? CAC_number : ''
+            CAC_number: CAC_number ? CAC_number : '',
+            is_Verified: false
         })
 
         const createdStore = await newStore.save();
@@ -469,6 +470,12 @@ export const getUserstore = async (req,res) => {
                 message:"You don't have a store currently"
             })
         }
+
+        if ( !getUserstore.is_Verified ) {
+            getUserstore.is_Verified = false  
+        }
+
+        await getUserstore.save();
 
         return res.status(200).json({
             message:"Store gotten successfully",
