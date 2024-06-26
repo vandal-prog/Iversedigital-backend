@@ -96,6 +96,13 @@ export const createOrderpreview = async (req, res) => {
             Total = Total + price
         }
 
+        if ( unQualifiedProducts.length > 0 ) {
+            return res.status(403).json({
+                data: unQualifiedProducts,
+                message:"Some product are no longer available, please remove them"
+            })
+        }
+
 
         return res.status(200).json({
             user: req.user._id,
@@ -106,7 +113,8 @@ export const createOrderpreview = async (req, res) => {
             user_delivery_address: getuserAddress,
             order_status: 'Created',
             delivery_details: {},
-            delivery_date: '2024-05-26T21:39:41.481Z'
+            delivery_date: '2024-05-26T21:39:41.481Z',
+            unQualifiedProducts
         })
 
     }
@@ -257,12 +265,15 @@ export const createOrder = async (req, res) => {
             Total = Total + price
         }
 
+        let delivery_fee = 400
+        let service_charge = 10
+
         const createOrder = new Order({
             user: req.user._id,
             products: order_product,
             product_total: Total,
-            service_charge: 10,
-            delivery_fee: 400,
+            service_charge,
+            delivery_fee,
             user_delivery_address: {
                 ...getuserAddress._doc,
                 first_name:  req.user.first_name,
@@ -270,7 +281,7 @@ export const createOrder = async (req, res) => {
                 email: req.user.email,
                 phone_number: req.user.phone_number
             },
-            order_status: 'Pending',
+            order_status: 'Created',
             delivery_details: {},
             order_code: generated_order_code,          
             delivery_date: '2024-05-26T21:39:41.481Z'
@@ -290,11 +301,59 @@ export const createOrder = async (req, res) => {
 
         await createNotificationUser.save()
 
+        if ( unQualifiedProducts.length > 0 ) {
+            return res.status(403).json({
+                message:"Some product are no longer availabe, please remove them",
+                data: unQualifiedProducts
+            })
+        }
+
+        const createPaymenLink = await fetch(
+            `${process.env.PAYMENT_URL}/charges/initialize`,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${process.env.PAYMENT_SECRET_KEY}`
+              },
+              body: JSON.stringify({
+                amount: Total + delivery_fee + service_charge ,
+                redirect_url: "https://korapay.com",
+                currency: "NGN",
+                reference: orderCreated.id,
+                narration: `Payment for order - ${generated_order_code}`,
+                channels: [
+                    "card",
+                    "bank_transfer"
+                ],
+                default_channel: "card",
+                customer: {
+                    name: `${ req.user.first_name } ${req.user.last_name}`,
+                    email: req.user.email
+                },
+                notification_url: "https://iversedigital-marketplace-backend.onrender.com/api/webhook/order_payment",
+                metadata:{
+                    order_id: orderCreated.id,
+                    user: req.user._id
+                }
+              })
+            }
+          );
+
+          if ( createPaymenLink.status !== 200 && createPaymenLink.status !== 202 ) {
+            return res.status(200).json({
+                message:"Unable to generate payment link"
+            })
+          }
+
+          const createPaymenLinkResponse = await createPaymenLink.json();
+
         return res.status(200).json({
             message: 'Your order was placed successfully.',
             data: {
                 orderCreated,
-                unQualifiedProducts
+                unQualifiedProducts,
+                payment_link: createPaymenLinkResponse.data.checkout_url
             }
         })
 
@@ -309,6 +368,8 @@ export const createOrder = async (req, res) => {
     }
 
 }
+
+
 
 export const getUserorders = async (req,res) => {
 
