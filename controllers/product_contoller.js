@@ -5,26 +5,80 @@ import Product from '../models/product_model.js';
 import Store from '../models/store_model.js';
 import Likes from '../models/liked_product_model.js';
 import ProductReviews from '../models/product_review.js';
+import mongoose from 'mongoose';
 
 export const getAllproduct = async (req,res) => {
 
     const pageNumber = parseInt(req.query.pageNumber) || 1;
     const pageSize = parseInt(req.query.pageSize) || 20;
+    const category = req.query.category;
+    const sub_category = req.query.sub_category;
+    const titleSearch =  req.query.search || ''
+    
+    const minPrice = parseInt(req.query.minPrice) || 0; // Replace with the minimum price
+    const maxPrice = parseInt(req.query.maxPrice) || 500000000; // Replace with the maximum price
 
     try{
 
-        // const Prod = await Product.find().skip( pageNumber * pageSize ).limit(pageSize)
+        let query = {}
 
-        // return res.status(200).json({
-        //     data: Prod
-        // })
+        if ( category ) {
+            query.category = new mongoose.Types.ObjectId(`${category}`)
+        }
+
+        if ( sub_category ) {
+            query.subCategory = new mongoose.Types.ObjectId(`${sub_category}`)
+        }
+
+        query.product_title = { $regex: titleSearch, $options: 'i' }
+
+        // const featureQuery = { 
+        //     'features.brand': 'HP', 
+        // };
+
+
+        const priceQuery = {
+            product_price_num: { $gte: minPrice, $lte: maxPrice }
+        };
+
+        const Orgquery = { 
+            $and: [
+                query,
+                // featureQuery,
+                priceQuery
+            ]
+        };
+
+        const populate_options = [
+            { from: 'categories', localField: 'category', foreignField: '_id', as: 'category' },
+            { from: 'subcategories', localField: 'subCategory', foreignField: '_id', as: 'subCategory' },
+            { from: 'stores', localField: 'store', foreignField: '_id', as: 'store' },
+        ];
+
+        const lookupStages = populate_options.map(option => ({
+            $lookup: {
+                from: option.from,
+                localField: option.localField,
+                foreignField: option.foreignField,
+                as: option.as
+            }
+        }));
+        
 
         const aggregationResult = await Product.aggregate([
+            // Convert product_price to a numerical value
+            {
+                $addFields: {
+                    product_price_num: { $toDouble: "$product_price" }
+                }
+            },
+            {$match:Orgquery},
             {
                 $facet: {
                     paginatedData: [
                         { $skip: (pageNumber - 1) * pageSize },
-                        { $limit: pageSize }
+                        { $limit: pageSize },
+                        ...lookupStages
                     ],
                     totalCount: [
                         { $count: "total" }
@@ -34,6 +88,7 @@ export const getAllproduct = async (req,res) => {
 
         ]);
 
+        
 
         const paginatedData = aggregationResult[0]?.paginatedData;
         const totalCount = aggregationResult[0]?.totalCount[0]?.total;
@@ -86,10 +141,24 @@ export const getProductbyId = async (req,res) => {
             });
         }
 
-        const populate_options = {
-            path: 'user',
-            select: 'first_name last_name _id email profile_img phone_number'
-        };
+        const populate_options = [
+            {
+                path: 'user',
+                select: 'first_name last_name _id email profile_img phone_number'
+            },
+            {
+                path: 'store',
+                select: '',
+            },
+            {
+                path: 'subCategory',
+                select: '',
+            },
+            {
+                path: 'category',
+                select: '',
+            },
+        ];
 
         const getProduct = await Product.findById(productId).populate(populate_options);
 
