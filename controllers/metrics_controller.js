@@ -51,3 +51,18 @@ export const SellerMetric = async (req,res) => {
     }
 
 }
+
+
+
+export const AdminMetrics = async (req,res) => {
+
+    try{}
+    catch(error){
+        console.log(error)
+        return res.status(403).json({
+            error,
+            message: 'Something went wrong'
+        }); 
+    }
+
+}

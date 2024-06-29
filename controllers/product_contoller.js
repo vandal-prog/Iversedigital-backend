@@ -14,6 +14,10 @@ export const getAllproduct = async (req,res) => {
     const category = req.query.category;
     const sub_category = req.query.sub_category;
     const titleSearch =  req.query.search || ''
+    const area =  req.query.area
+    const state =  req.query.state
+    const address =  req.query.address
+    const store =  req.query.store
     
     const minPrice = parseInt(req.query.minPrice) || 0; // Replace with the minimum price
     const maxPrice = parseInt(req.query.maxPrice) || 500000000; // Replace with the maximum price
@@ -30,7 +34,14 @@ export const getAllproduct = async (req,res) => {
             query.subCategory = new mongoose.Types.ObjectId(`${sub_category}`)
         }
 
+        if ( store ) {
+            query.store = new mongoose.Types.ObjectId(`${store}`)
+        }
+
         query.product_title = { $regex: titleSearch, $options: 'i' }
+        query.area = { $regex: area, $options: 'i' }
+        query.state = { $regex: state, $options: 'i' }
+        query.address = { $regex: address, $options: 'i' }
 
         // const featureQuery = { 
         //     'features.brand': 'HP', 
@@ -101,21 +112,6 @@ export const getAllproduct = async (req,res) => {
             totalPages,
             totalCount
         });
-
-        // const filterCriteria = {};
-
-        // const query_list = Object.keys(req.query);
-
-        // for (let h = 0; h < query_list.length; h++) {
-        //     const fieldName = `features.${query_list[h]}`
-        //     filterCriteria[fieldName] = req.query[query_list[h]]
-        // }
-
-        // const getProduct = await Product.find(filterCriteria)
-
-        // return res.status(200).json({
-        //     data:getProduct
-        // })
 
     }
     catch(error){

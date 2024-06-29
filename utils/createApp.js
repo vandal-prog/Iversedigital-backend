@@ -13,6 +13,7 @@ import ridersRoute from '../routes/rider.routes.js'
 import transactionsRoute from '../routes/transactions.routes.js'
 import metricsRoute from '../routes/metrics.routes.js'
 import webHookRoute from '../routes/webhook.routes.js'
+import adminRoutes from '../routes/admin.routes.js'
 // import userRoute from '../routes/user.routes.js';
 import cookieParser from 'cookie-parser';
 // import path from 'path';
@@ -52,6 +53,7 @@ function createApp() {
   app.use('/api/transactions', transactionsRoute)
   app.use('/api/metrics', metricsRoute)
   app.use('/api/webhook', webHookRoute)
+  app.use('/api/admin', adminRoutes)
 
   app.use((err, req, res, next) => {
     // res.header("Access-Control-Allow-Origin", "*");
