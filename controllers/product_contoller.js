@@ -13,11 +13,11 @@ export const getAllproduct = async (req,res) => {
     const pageSize = parseInt(req.query.pageSize) || 20;
     const category = req.query.category;
     const sub_category = req.query.sub_category;
-    const titleSearch =  req.query.search || ''
-    const area =  req.query.area
-    const state =  req.query.state
-    const address =  req.query.address
-    const store =  req.query.store
+    const titleSearch =  req.query.search || null
+    const area =  req.query.area || null
+    const state =  req.query.state || null
+    const address =  req.query.address || null
+    const store =  req.query.store || null
     
     const minPrice = parseInt(req.query.minPrice) || 0; // Replace with the minimum price
     const maxPrice = parseInt(req.query.maxPrice) || 500000000; // Replace with the maximum price
@@ -38,10 +38,21 @@ export const getAllproduct = async (req,res) => {
             query.store = new mongoose.Types.ObjectId(`${store}`)
         }
 
-        query.product_title = { $regex: titleSearch, $options: 'i' }
-        query.area = { $regex: area, $options: 'i' }
-        query.state = { $regex: state, $options: 'i' }
-        query.address = { $regex: address, $options: 'i' }
+        if ( titleSearch ) {
+            query.product_title = { $regex: titleSearch, $options: 'i' }
+        }
+
+        if ( area ) {
+            query.area = { $regex: area, $options: 'i' }
+        }
+
+        if ( state ) {
+            query.state = { $regex: state, $options: 'i' }
+        }
+
+        if ( address ) {
+            query.address = { $regex: address, $options: 'i' }
+        }
 
         // const featureQuery = { 
         //     'features.brand': 'HP', 
@@ -52,7 +63,7 @@ export const getAllproduct = async (req,res) => {
             product_price_num: { $gte: minPrice, $lte: maxPrice }
         };
 
-        const Orgquery = { 
+        const Orgquery = {  
             $and: [
                 query,
                 // featureQuery,
