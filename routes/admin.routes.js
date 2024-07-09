@@ -5,7 +5,9 @@ import {
     getUserdetails,
     getAllstores,
     approveOrdeclineStore,
-    getStorebyId
+    getStorebyId,
+    approveDeclineRider,
+    getRiderdetails
 } from "../controllers/admin_controller.js";
 import { verifyAdminToken } from "../middleware/jwt.js";
 
@@ -15,7 +17,10 @@ router.put("/verify_product/:id", verifyAdminToken,approveOrdeclineProduct);
 router.get("/all_users", verifyAdminToken,getAllusers);
 router.get("/user_detail/:id", verifyAdminToken,getUserdetails);
 router.get("/all_stores", verifyAdminToken,getAllstores);
-router.get("/verify_store/:id", verifyAdminToken,approveOrdeclineStore);
+router.put("/verify_store/:id", verifyAdminToken,approveOrdeclineStore);
 router.get("/get_store/:id", verifyAdminToken,getStorebyId);
+router.put("/verify_rider/:id", verifyAdminToken,approveDeclineRider);
+router.get("/verify_rider/:id", verifyAdminToken,getRiderdetails);
 
 export default router;
+ 

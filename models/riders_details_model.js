@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { boolean } from 'yup';
 // import { working_days } from '../utils/special_variables';
 
 const working_days = [ 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday' ]
@@ -31,7 +32,7 @@ const riderDetailsSchema = new mongoose.Schema({
         type: Object,
         required: false
     },
-    vehicle_type:{
+    vehicle_type:{ 
         type: String,
         enum: [ 'bike', 'car', 'bus', 'mini_van', 'truck', 'mini_truck' ],
         required: false
@@ -43,6 +44,14 @@ const riderDetailsSchema = new mongoose.Schema({
     vehicle_pictures: {
         type: [String],
         required: false
+    },
+    isVerified: {
+        type: Boolean,
+        required: false
+    },
+    isRejected: {
+        type: Boolean,
+        required: false 
     },
     vehicle_plate_number:{
         type: String,

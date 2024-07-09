@@ -3,6 +3,7 @@ import Product from "../models/product_model.js";
 import Profile from "../models/profile_model.js";
 import Store from "../models/store_model.js";
 import User from "../models/user_model.js";
+import riderDetails from "../models/riders_details_model.js";
 
 
 export const approveOrdeclineProduct = async (req,res) => {
@@ -51,13 +52,14 @@ export const approveOrdeclineProduct = async (req,res) => {
             })
         }
 
-        if ( getProduct && action === 'approve' ) {
+        if ( getProduct.isVerified && action === 'approve' ) {
             return res.status(403).json({
                 message:"Product has already been approved"
             })
         }
 
         getProduct.isVerified = action === 'approve' ? true : false
+        getProduct.isRejected = action === 'approve' ? false : true
         
         // Send email to the user or merchant that their product has been approved
         // Send notification as well
@@ -350,7 +352,18 @@ export const getStorebyId = async (req,res) => {
             })
         }
 
-        const getStore = await Store.findById(store_id);
+        const populate_options = [
+            {
+                path: 'user',
+                select: 'first_name last_name _id email profile_img phone_number'
+            },
+            {
+                path:'store_category',
+                select:''
+            }
+        ]
+
+        const getStore = await Store.findById(store_id).populate(populate_options);
 
         if ( !getStore ) {
             return res.status(403).json({
@@ -392,6 +405,12 @@ export const approveOrdeclineStore = async (req,res) => {
             })
         }
 
+        if ( action !== 'approve' && action !== 'decline'  ) {
+            return res.status(400).json({
+                message:"action must either me approve or decline"
+            })
+        }
+
         const populate_options = [
             {
                 path: 'user',
@@ -404,6 +423,131 @@ export const approveOrdeclineStore = async (req,res) => {
         ]
 
         const getStore = await Store.findById(storeId).populate(populate_options)
+
+        if ( !getStore ) {
+            return res.status(400).json({
+                message:'Store with this id dose not exist'
+            })
+        }
+
+        if ( getStore.is_Verified && action === 'approve' ) {
+            return res.status(403).json({
+                message:"Store has already been approved"
+            })
+        }
+
+        getStore.is_Verified = action === 'approve' ? true : false
+        getStore.is_Rejected = action === 'approve' ? false : true
+
+        await getStore.save();
+
+        return res.status(200).json({
+            message:"Success",
+            data: getStore
+        })
+
+    }
+    catch(error){
+        console.log(error)
+        return res.status(403).json({
+            error,
+            message: 'Something went wrong'
+        });
+    }
+
+}
+
+export const getRiderdetails = async (req,res) => {
+
+    try{
+
+        const rider_id = req.params.id
+
+        if ( !rider_id ) {
+            return res.status(400).json({
+                message:"rider_id is required"
+            })
+        }
+
+        const populate_options = [
+            {
+                path: 'user',
+                select: 'first_name last_name _id email profile_img phone_number role isVerified createdAt'
+            },
+        ]
+
+        const getRider = await riderDetails.findOne({ user: rider_id }).populate(populate_options)
+
+        if ( !getRider ) {
+            return res.status(400).json({
+                message:"Rider with this id dose not exist"
+            })
+        }
+
+        return res.status(200).json({
+            data: getRider,
+            message:"Data was gotten successfully"
+        })
+
+    }
+    catch(error){
+        console.log(error)
+        return res.status(403).json({
+            error,
+            message: 'Something went wrong'
+        });
+    }
+}
+
+export const approveDeclineRider = async (req,res) => {
+
+    try{
+
+        const riderId = req.params.id;
+        const action = req.body.action;
+
+        if ( !riderId || !action ) {
+            return res.status(400).json({
+                message:'Rider id and action is required'
+            })
+        }
+
+        if ( action !== 'approve' && action !== 'decline'  ) {
+            return res.status(400).json({
+                message:"action must either me approve or decline"
+            })
+        }
+
+        const populate_options = [
+            {
+                path: 'user',
+                select: 'first_name last_name _id email profile_img phone_number'
+            }
+        ]
+
+        const getRider = await riderDetails.findOne({ user: riderId }).populate(populate_options)
+
+        if ( !getRider ) {
+            return res.status(403).json({
+                message:"Rider with this id dose not exist"
+            })
+        }
+
+        if ( getRider.isVerified && action === 'approve' ) {
+            return res.status(403).json({
+                message:"Rider has already been approved"
+            })
+        }
+
+        getRider.isVerified = action === 'approve' ? true : false
+        getRider.isRejected = action === 'approve' ? false : true
+
+        await getRider.save();
+
+        return res.status(200).json({
+            message:"Success",
+            data: getRider
+        })
 
     }
     catch(error){

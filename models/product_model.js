@@ -24,7 +24,6 @@ const ProductSchema = new mongoose.Schema({
     },
     isVerified: {
         type: Boolean,
-        default: false,
         required: false
     },
     total_bookmarks: {
@@ -85,6 +84,10 @@ const ProductSchema = new mongoose.Schema({
         required: false
     },
     isAvailable:{
+        type:Boolean,
+        required: false
+    },
+    isRejected:{
         type:Boolean,
         required: false
     },
