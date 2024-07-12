@@ -20,7 +20,7 @@ router.get("/all_stores", verifyAdminToken,getAllstores);
 router.put("/verify_store/:id", verifyAdminToken,approveOrdeclineStore);
 router.get("/get_store/:id", verifyAdminToken,getStorebyId);
 router.put("/verify_rider/:id", verifyAdminToken,approveDeclineRider);
-router.get("/verify_rider/:id", verifyAdminToken,getRiderdetails);
+router.get("/get_rider/:id", verifyAdminToken,getRiderdetails);
 
 export default router;
  
