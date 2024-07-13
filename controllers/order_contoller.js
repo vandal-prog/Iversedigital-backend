@@ -318,7 +318,7 @@ export const createOrder = async (req, res) => {
               },
               body: JSON.stringify({
                 amount: Total + delivery_fee + service_charge ,
-                redirect_url: "https://korapay.com",
+                redirect_url:`https://iversedigital-marketplace.vercel.app/checkout/success?id=${orderCreated.id}`,
                 currency: "NGN",
                 reference: orderCreated.id,
                 narration: `Payment for order - ${generated_order_code}`,
@@ -369,7 +369,55 @@ export const createOrder = async (req, res) => {
 
 }
 
+export const updateOrderById = async (req,res) => {
 
+    try{
+
+        const orderId = req.params.id
+
+        if ( !orderId ) {
+            return res.status(400).json({
+                message: 'Order id is required'
+            })
+        }
+
+        const getOrder = await Order.findById(orderId)
+
+        if ( !getOrder ) {
+            return res.status(400).json({
+                message: 'Order with this id dose not exist'
+            })
+        }
+
+        getOrder.order_status = 'Pending'
+
+        await getOrder.save()
+
+        const getUsercart = await Cart.findOne({ user: getOrder.user })
+
+        if ( getUsercart ) {
+            getUsercart.products = []
+            getUsercart.total = 0
+
+            await getUsercart.save()
+        }
+
+        return res.status(400).json({
+            message: 'Order Updated successfully',
+            data: getOrder
+        })
+
+    }
+    catch (error) {
+        console.log(error)
+        return res.status(403).json({
+            has_error: true,
+            error,
+            message: 'Something went wrong'
+        });
+    }
+
+}
 
 export const getUserorders = async (req,res) => {
 
