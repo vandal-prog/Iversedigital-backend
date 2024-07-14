@@ -328,7 +328,7 @@ export const createProduct = async (req,res) => {
             features:product_features,
             isNegotiable: isNegotiable ? true : false,
             quantity_available,
-            isAvailable: true,
+            isAvailable: false,
             likes:0,
             store,
             product_status: 'pending'
