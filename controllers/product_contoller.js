@@ -10,7 +10,7 @@ import mongoose from 'mongoose';
 export const getAllproduct = async (req,res) => {
 
     const pageNumber = parseInt(req.query.pageNumber) || 1;
-    const pageSize = parseInt(req.query.pageSize) || 20;
+    const pageSize = parseInt(req.query.pageSize) || 50;
     const category = req.query.category;
     const sub_category = req.query.sub_category;
     const titleSearch =  req.query.search || null

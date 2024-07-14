@@ -59,6 +59,7 @@ export const approveOrdeclineProduct = async (req,res) => {
         }
 
         getProduct.isVerified = action === 'approve' ? true : false
+        getProduct.isAvailable = action === 'approve' ? true : false
         getProduct.isRejected = action === 'approve' ? false : true
         
         // Send email to the user or merchant that their product has been approved
