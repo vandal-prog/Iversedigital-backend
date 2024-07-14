@@ -29,13 +29,17 @@ export const verifyUserTokenText = async (req, res, next) => {
 
   const authHeader = req.headers.authorization;
 
-  if (!authHeader) return next(createError(401, 'You are not authenticated!'));
+  if (!authHeader){
+    next();
+    return
+  } 
 
   const token = authHeader.split(' ')[1];
   const token_keyword = authHeader.split(' ')[0];
 
   if ( token_keyword !== 'Bearer' ){
     next()
+    return
   } 
 
 

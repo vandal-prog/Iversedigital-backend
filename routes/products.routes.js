@@ -11,11 +11,11 @@ import {
   ReviewProduct,
   getProductbystore
 } from "../controllers/product_contoller.js";
-import { verifyUserToken } from "../middleware/jwt.js";
+import { verifyUserToken, verifyUserTokenText } from "../middleware/jwt.js";
 
 const router = express.Router();
 
-router.get("/", getAllproduct);
+router.get("/", verifyUserTokenText, getAllproduct);
 router.get("/:id", getProductbyId);
 router.get("/liked/products/", verifyUserToken ,AlluserLikedProduct);
 router.post("/create_product", verifyUserToken, createProduct);

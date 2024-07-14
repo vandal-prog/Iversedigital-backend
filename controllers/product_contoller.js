@@ -27,11 +27,15 @@ export const getAllproduct = async (req,res) => {
         let query = {}
 
         if ( req.user ) {
+
+            console.log(req.user)
             
             if ( req.user.role !== 'admin' ) {
                 query.isVerified = true
             }
 
+        }else{
+            query.isVerified = true
         }
 
         if ( category ) {
