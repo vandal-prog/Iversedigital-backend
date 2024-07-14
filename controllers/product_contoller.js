@@ -26,7 +26,13 @@ export const getAllproduct = async (req,res) => {
 
         let query = {}
 
-        query.isVerified = true
+        if ( req.user ) {
+            
+            if ( req.user.role !== 'admin' ) {
+                query.isVerified = true
+            }
+
+        }
 
         if ( category ) {
             query.category = new mongoose.Types.ObjectId(`${category}`)
