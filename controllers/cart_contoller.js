@@ -72,7 +72,7 @@ export const Addtocart = async (req,res) => {
             });
         }
 
-        if ( cart_product.product_status !== 'approved' ) {
+        if ( !cart_product.isVerified) {
             return ({
                 message:"Product is yet to be approved by the admin"
             });

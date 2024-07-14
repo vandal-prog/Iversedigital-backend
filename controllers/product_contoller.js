@@ -28,10 +28,11 @@ export const getAllproduct = async (req,res) => {
 
         if ( req.user ) {
 
-            console.log(req.user)
+            // console.log(req.user)
             
             if ( req.user.role !== 'admin' ) {
                 query.isVerified = true
+            }else{
             }
 
         }else{
