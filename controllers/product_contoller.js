@@ -1,4 +1,3 @@
-import { date } from 'yup';
 import Category from '../models/category_model.js';
 import subCategory from '../models/sub_category_model.js';
 import Product from '../models/product_model.js';
@@ -27,8 +26,6 @@ export const getAllproduct = async (req,res) => {
         let query = {}
 
         if ( req.user ) {
-
-            // console.log(req.user)
             
             if ( req.user.role !== 'admin' ) {
                 query.isVerified = true
@@ -275,6 +272,20 @@ export const createProduct = async (req,res) => {
 
         }
 
+        const checkStore = await Store.findById(store)
+
+        if ( !checkStore ) {
+            return res.status(400).json({
+                message: 'Only store owners are allowed to create a product.'
+            });
+        }
+
+        if ( !checkStore.is_Verified ) {
+            return res.status(400).json({
+                message: 'Your store is yet to be verified.'
+            });
+        }
+
         if ( product_images.length !== 3 ) {
             return res.status(400).json({
                 message:"There should be 3 product_images",
@@ -289,19 +300,6 @@ export const createProduct = async (req,res) => {
 
         const categoryCheck = await Category.findById(product_category);
         const subCategoryCheck = await subCategory.findById(product_subCategory);
-        const checkStore = await Store.findById(store)
-
-        if ( !checkStore ) {
-            return res.status(400).json({
-                message: 'Only store owners are allowed to create a product.'
-            });
-        }
-
-        if ( !checkStore.is_Verified ) {
-            return res.status(400).json({
-                message: 'Your store is yet to be verified.'
-            });
-        }
 
         if ( !categoryCheck ) {
             return res.status(400).json({
@@ -388,8 +386,8 @@ export const editProduct = async (req,res) => {
 
         if ( !getProduct ) {
             return res.status(403).json({
-                error:'Ad dose not exist',
-                message: 'Ad dose not exist'
+                error:'Product dose not exist',
+                message: 'Product dose not exist'
             });
         }
 
@@ -399,12 +397,12 @@ export const editProduct = async (req,res) => {
             role: req.user.role
         })
 
-        // if ( req.user._id !== getProduct.user && req.user.role !== 'user' ) {
-        //     return res.status(403).json({
-        //         error:'You are not authenticated to perform this action',
-        //         message: 'You are not authenticated to perform this action'
-        //     });
-        // }
+        if ( req.user._id !== getProduct.user && req.user.role !== 'admin' ) {
+            return res.status(403).json({
+                error:'You are not authenticated to perform this action',
+                message: 'You are not authenticated to perform this action'
+            });
+        }
 
         if ( product_title ) {
             getProduct.product_title = product_title;

@@ -1,3 +1,4 @@
+import Cart_item from '../models/cart_items_model.js';
 import Cart from '../models/cart_model.js';
 import Product from '../models/product_model.js';
 import Store from '../models/store_model.js';
@@ -8,28 +9,36 @@ export const getUserCart = async (req,res) => {
 
         const user = req.user
 
-        const getUsercart = await Cart.findOne({ user: user._id });
+        const populate_options = {
+            path: 'product',
+            populate:{
+                path:'store'
+            }
+        };
 
-        if ( !getUsercart ) {
-            
-            const newCart = new Cart({
-                user:user._id,
-                products:[],
-                total:0
+        const getUsercartItems = await Cart_item.find({ user: user._id }).populate(populate_options);
+
+        let UpdatedCart = []
+        let totalprice = 0
+
+        getUsercartItems.map(item => {
+            // Add a temporary 'totalPrice' field
+            item.totalPrice = parseInt(item.quantity) * parseInt(item.product.product_price);
+            UpdatedCart.push({
+                ...item._doc,
+                totalPrice: parseInt(item.quantity) * parseInt(item.product.product_price)
             })
-
-            const createdCart = await newCart.save();
-
-            return res.status(200).json({
-                message:"Cart was gotten successfully",
-                data: createdCart
-            })
-
-        }
+            totalprice = totalprice + parseInt(item.quantity) * parseInt(item.product.product_price)
+            return item;
+        });
 
         return res.status(200).json({
             message:"Cart was gotten successfully",
-            data: getUsercart
+            data: {
+                user:user._id,
+                cart_items:UpdatedCart,
+                total:totalprice
+            }
         })
 
     }
@@ -100,68 +109,53 @@ export const Addtocart = async (req,res) => {
             });
         }
 
-        let getUsercart = await Cart.findOne({ user: user._id });
 
-        if ( !getUsercart ) {
-            
-            const newCart = new Cart({
-                user:user._id,
-                products:[],
-                total:0
-            })
+        let UserCartItem = await Cart_item.findOne({ user: user._id, product: product_id })
 
-            getUsercart = await newCart.save();
-
-        }
-
-        let UserCartProducts = [...getUsercart.products]
-
-        const ProductExsistingIncart = UserCartProducts.filter( (product) => product.product_id === product_id )
-
-        if ( ProductExsistingIncart.length < 1 ) {
-            UserCartProducts.push({ 
-                product_id: cart_product.id,
-                product_title: cart_product.product_title,
-                product_price: cart_product.product_price,
-                product_images: cart_product.product_images,
-                product_description: cart_product.product_description,
-                isAvailable: cart_product.isAvailable,
+        if ( !UserCartItem ) {
+            UserCartItem = new Cart_item({
+                product: product_id,
+                user: user._id,
                 quantity
             })
+
+            UserCartItem = await UserCartItem.save();
+
+        }else{
+            UserCartItem.quantity = quantity
+            await UserCartItem.save()
         }
 
-        if ( ProductExsistingIncart.length > 0 ) {
-            
-            const index = UserCartProducts.findIndex( product => product.product_id === product_id );
-
-            UserCartProducts[index] = {
-                ...UserCartProducts[index],
-                quantity
+        const populate_options = {
+            path: 'product',
+            populate:{
+                path:"store"
             }
+        };
 
-        }
+        const getUsercartItems = await Cart_item.find({ user: user._id }).populate(populate_options);
 
-        let Total = 0
+        let UpdatedCart = []
+        let totalprice = 0
 
-        console.log(UserCartProducts)
-
-        for (let k = 0; k < UserCartProducts.length; k++) {
-
-            const prod = UserCartProducts[k];
-
-            let price = prod.quantity * prod.product_price;
-            
-            Total = Total + parseInt(price,10)
-        }
-
-        getUsercart.products = UserCartProducts
-        getUsercart.total = Total
-
-        const UpdatedCart = await getUsercart.save()
+        getUsercartItems.map(item => {
+            // Add a temporary 'totalPrice' field
+            item.totalPrice = parseInt(item.quantity) * parseInt(item.product.product_price);
+            UpdatedCart.push({
+                ...item._doc,
+                totalPrice: parseInt(item.quantity) * parseInt(item.product.product_price)
+            })
+            totalprice = totalprice + parseInt(item.quantity) * parseInt(item.product.product_price)
+            return item;
+        });
 
         return res.status(200).json({
             message:"Cart was updated successfully",
-            data: UpdatedCart
+            data:{
+                user:user._id,
+                cart_items:UpdatedCart,
+                total:totalprice
+            }
         })
 
     }
@@ -184,53 +178,43 @@ export const removeFromcart = async (req,res) => {
         const user = req.user
         const product_id = req.body.product_id
 
-        let getUsercart = await Cart.findOne({ user: user._id });
-
-        if ( !getUsercart ) {
-            
-            const newCart = new Cart({
-                user:user._id,
-                products:[],
-                total:0
+        if ( !product_id ) {
+            return res.status(400).json({
+                message:'product_id are required'
             })
+        }
 
-            getUsercart = await newCart.save();
+        await Cart_item.findOneAndDelete({ user: user._id, product: product_id })
 
-            return res.status(200).json({
-                message:"Cart was updated successfully",
-                data: getUsercart
+        const populate_options = {
+            path: 'product',
+        };
+
+        const getUsercartItems = await Cart_item.find({ user: user._id }).populate(populate_options);
+
+        let UpdatedCart = []
+        let totalprice = 0
+
+        getUsercartItems.map(item => {
+            // Add a temporary 'totalPrice' field
+            item.totalPrice = parseInt(item.quantity) * parseInt(item.product.product_price);
+            UpdatedCart.push({
+                ...item._doc,
+                totalPrice: parseInt(item.quantity) * parseInt(item.product.product_price)
             })
-
-        }
-
-        let UserCartProducts = [...getUsercart.products]
-
-        const index = UserCartProducts.findIndex( product => product.product_id === product_id );
-
-        if ( index !== -1 ) {
-            UserCartProducts.splice(index,1)
-        }
-
-        let Total = 0
-
-        for (let k = 0; k < UserCartProducts.length; k++) {
-
-            const prod = UserCartProducts[k];
-
-            let price = prod.quantity * parseInt(prod.product_price,10);
-            
-            Total = Total + price
-        }
-
-        getUsercart.products = UserCartProducts
-        getUsercart.total = Total
-
-        const UpdatedCart = await getUsercart.save()
+            totalprice = totalprice + parseInt(item.quantity) * parseInt(item.product.product_price)
+            return item;
+        });
 
         return res.status(200).json({
             message:"Cart was updated successfully",
-            data: UpdatedCart
+            data:{
+                user:user._id,
+                cart_items:UpdatedCart,
+                total:totalprice
+            }
         })
+
 
     }
     catch(error){

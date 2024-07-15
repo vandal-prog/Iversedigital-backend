@@ -391,6 +391,12 @@ export const becomeMarchant = async (req,res) => {
         //     })
         // }
 
+        if ( UserDet.role === 'rider' ) {
+            return res.status(403).json({
+                message:'Rider Account cannot create a store'
+            })
+        }
+
         if ( !store_name || !store_category || !customer_care_number || !address
             || !area || !state ) {
             return res.status(400).json({

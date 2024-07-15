@@ -1,3 +1,4 @@
+import Cart_item from '../models/cart_items_model.js';
 import Cart from '../models/cart_model.js';
 import merchantOrders from '../models/merchant_order_model.js';
 import Notification from '../models/notification_model.js';
@@ -23,12 +24,20 @@ export const createOrderpreview = async (req, res) => {
         //     message:"Order was deleted successfully"
         // })
 
-        const getUsercartDetails = await Cart.findOne({ user: req.user._id });
+        const populate_options = {
+            path: 'product',
+            populate:{
+                path:'store'
+            }
+        };
+
+        const getUsercartItems = await Cart_item.find({ user: req.user._id }).populate(populate_options);
+
         const getuserAddress = await userAddress.findOne({ user: req.user._id })
 
-        if (!getUsercartDetails) {
+        if ( getUsercartItems.length < 1 ) {
             return res.status(400).json({
-                message: 'User dose not have an existing cart'
+                message: 'User cart is empty'
             })
         }
 
@@ -44,57 +53,37 @@ export const createOrderpreview = async (req, res) => {
             })
         }
 
-        if (getUsercartDetails.products.length < 1) {
-            return res.status(403).json({
-                message: 'user cart is empty'
-            })
-        }
-
         let unQualifiedProducts = []
-
         let order_product = []
 
-        for (let k = 0; k < getUsercartDetails.products.length; k++) {
-            const currentProduct = getUsercartDetails.products[k];
+        let totalprice = 0
 
-            const chekproduct = await Product.findById(currentProduct.product_id)
+        let delivery_fee = 0
 
-            if (!chekproduct) continue
+        getUsercartItems.map(item => {
+            // Add a temporary 'totalPrice' field
 
-            if (!chekproduct.isAvailable) {
-                unQualifiedProducts.push({ product: chekproduct, quantity: currentProduct.quantity, status: 'Unavailable', message: 'This product is no longer available' })
-                continue
+            if (!item.product.isAvailable) {
+                unQualifiedProducts.push({ product: item.product, quantity: item.quantity, status: 'Unavailable', message: 'This product is no longer available' })
+                return
             }
 
-            if (chekproduct.quantity_available < currentProduct.quantity) {
-                unQualifiedProducts.push({ product: chekproduct, quantity: currentProduct.quantity, status: 'Out of stock', message: 'This product is currently out of stock' })
-                continue
+            if (item.product.quantity_available < item.quantity) {
+                unQualifiedProducts.push({ product: item.product, quantity: item.quantity, status: 'Out of stock', message: 'This product is currently out of stock' })
+                return
             }
 
-            const getProductStore = await Store.findOne({ user: chekproduct.user })
-
+            item.totalPrice = parseInt(item.quantity) * parseInt(item.product.product_price);
             order_product.push({
-                product: currentProduct,
-                store_details: {
-                    state: getProductStore ? getProductStore.state : null,
-                    area: getProductStore ? getProductStore.area : null,
-                    address: getProductStore ? getProductStore.address : null,
-                    is_Opened: getProductStore ? getProductStore.is_Opened : false
-                }
+                ...item._doc,
+                totalPrice: parseInt(item.quantity) * parseInt(item.product.product_price)
             })
+            totalprice = totalprice + parseInt(item.quantity) * parseInt(item.product.product_price)
 
-        }
+            delivery_fee = delivery_fee + 40
 
-        let Total = 0
-
-        for (let k = 0; k < order_product.length; k++) {
-
-            const prod = order_product[k];
-
-            let price = prod.product.quantity * parseInt(prod.product.product_price, 10);
-
-            Total = Total + price
-        }
+            return item;
+        });
 
         if ( unQualifiedProducts.length > 0 ) {
             return res.status(403).json({
@@ -107,9 +96,9 @@ export const createOrderpreview = async (req, res) => {
         return res.status(200).json({
             user: req.user._id,
             products: order_product,
-            product_total: Total,
+            product_total: totalprice,
             service_charge: 10,
-            delivery_fee: 400,
+            delivery_fee,
             user_delivery_address: getuserAddress,
             order_status: 'Created',
             delivery_details: {},
@@ -128,20 +117,36 @@ export const createOrderpreview = async (req, res) => {
     }
 
 }
+
+
+
+
+
+
 // After payment
 
 export const createOrder = async (req, res) => {
 
     try {
 
-        // await Order.collection.drop()
+        const populate_options = {
+            path: 'product',
+            populate:{
+                path:'store',
+                populate:{
+                    path:'user',
+                    select:'first_name last_name _id email profile_img phone_number'
+                }
+            }
+        };
 
-        const getUsercartDetails = await Cart.findOne({ user: req.user._id });
+        const getUsercartItems = await Cart_item.find({ user: req.user._id }).populate(populate_options);
+
         const getuserAddress = await userAddress.findOne({ user: req.user._id })
 
-        if (!getUsercartDetails) {
+        if ( getUsercartItems.length < 1 ) {
             return res.status(400).json({
-                message: 'User dose not have an existing cart'
+                message: 'User cart is empty'
             })
         }
 
@@ -157,122 +162,45 @@ export const createOrder = async (req, res) => {
             })
         }
 
-        if (getUsercartDetails.products.length < 1) {
-            return res.status(403).json({
-                message: 'user cart is empty'
-            })
-        }
-
         let unQualifiedProducts = []
-
         let order_product = []
 
         const generated_order_code = generateOrdercode()
 
-        for (let k = 0; k < getUsercartDetails.products.length; k++) {
-            const currentProduct = getUsercartDetails.products[k];
+        let totalprice = 0
+        let service_charge = 30
+        let delivery_fee = 0
 
-            const chekproduct = await Product.findById(currentProduct.product_id)
+        getUsercartItems.map(item => {
+            // Add a temporary 'totalPrice' field
 
-            if (!chekproduct) continue
-
-            if (!chekproduct.isAvailable) {
-                unQualifiedProducts.push({ product: chekproduct, quantity: currentProduct.quantity, status: 'Unavailable', message: 'This product is no longer available' })
-                continue
+            if (!item.product.isAvailable) {
+                unQualifiedProducts.push({ product: item.product, quantity: item.quantity, status: 'Unavailable', message: 'This product is no longer available' })
+                return
             }
 
-            if (chekproduct.quantity_available < currentProduct.quantity) {
-                unQualifiedProducts.push({ product: chekproduct, quantity: currentProduct.quantity, status: 'Out of stock', message: 'This product is currently out of stock' })
-                continue
+            if (item.product.quantity_available < item.quantity) {
+                unQualifiedProducts.push({ product: item.product, quantity: item.quantity, status: 'Out of stock', message: 'This product is currently out of stock' })
+                return
             }
 
-            const populate_options = {
-                path: 'user',
-                select: 'first_name last_name _id email profile_img phone_number'
-            };
-
-            const getProductStore = await Store.findOne({ user: chekproduct.user }).populate(populate_options)
-
-            // return res.status(200).json({
-            //     data: getProductStore.user
-            // })
-
-            chekproduct.quantity_available = chekproduct.quantity_available - currentProduct.quantity
-            chekproduct.store = getProductStore.id  
-
-            await chekproduct.save()
-
+            item.totalPrice = parseInt(item.quantity) * parseInt(item.product.product_price);
             order_product.push({
-                id: k,
-                product: currentProduct,
-                store_details: {
-                    store_name: getProductStore ? getProductStore.store_name : null,
-                    state: getProductStore ? getProductStore.state : null,
-                    area: getProductStore ? getProductStore.area : null,
-                    address: getProductStore ? getProductStore.address : null,
-                    is_Opened: getProductStore ? getProductStore.is_Opened : false,
-                    store_owner_details: getProductStore ? {
-                        id: getProductStore.user._id,
-                        first_name: getProductStore.user.first_name,
-                        last_name: getProductStore.user.last_name,
-                        email: getProductStore.user.email,
-                        phone_number: getProductStore.user.phone_number
-                    } : null
-                },
-                product_status: 'Pending'
+                ...item._doc,
+                totalPrice: parseInt(item.quantity) * parseInt(item.product.product_price)
             })
+            totalprice = totalprice + parseInt(item.quantity) * parseInt(item.product.product_price)
 
-            const newStoreOrder = new merchantOrders({
-                user: chekproduct.user,
-                store: getProductStore.id,
-                order_code: generated_order_code,
-                customer: {
-                    first_name: req.user.first_name,
-                    last_name: req.user.last_name,
-                    email: req.user.email,
-                    profile_img: req.user.profile_img ? req.user.profile_img : ''
-                },
-                order_status:'Pending',
-                product: currentProduct,
-                quantity: currentProduct.quantity
-            })
+            delivery_fee = delivery_fee + 40
 
-            await newStoreOrder.save()
-
-            const createNotificationMerchant = new Notification({
-                user: chekproduct.user,
-                description: `A customer just placed an order for your product`,
-                data: {
-                    product: currentProduct,
-                    user_delivery_address: getuserAddress  
-                },
-                status: 'Unread',
-                Notification_type: 'Sales'
-            })
-    
-            await createNotificationMerchant.save()
-
-        }
-
-        let Total = 0
-
-        for (let k = 0; k < order_product.length; k++) {
-
-            const prod = order_product[k];
-
-            let price = prod.product.quantity * parseInt(prod.product.product_price, 10);
-
-            Total = Total + price
-        }
-
-        let delivery_fee = 400
-        let service_charge = 10
+            return item;
+        });
 
         const createOrder = new Order({
             user: req.user._id,
             products: order_product,
-            product_total: Total,
-            service_charge,
+            product_total: totalprice,
+            service_charge:30,
             delivery_fee,
             user_delivery_address: {
                 ...getuserAddress._doc,
@@ -317,7 +245,7 @@ export const createOrder = async (req, res) => {
                 'Authorization': `Bearer ${process.env.PAYMENT_SECRET_KEY}`
               },
               body: JSON.stringify({
-                amount: Total + delivery_fee + service_charge ,
+                amount: totalprice + delivery_fee + service_charge ,
                 redirect_url:`https://iversedigital-marketplace.vercel.app/checkout/success?id=${orderCreated.id}`,
                 currency: "NGN",
                 reference: orderCreated.id,
@@ -368,6 +296,11 @@ export const createOrder = async (req, res) => {
     }
 
 }
+
+
+
+
+
 
 export const updateOrderById = async (req,res) => {
 
