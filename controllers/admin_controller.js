@@ -4,6 +4,7 @@ import Profile from "../models/profile_model.js";
 import Store from "../models/store_model.js";
 import User from "../models/user_model.js";
 import riderDetails from "../models/riders_details_model.js";
+import Transactions from "../models/transactions_model.js";
 
 
 export const approveOrdeclineProduct = async (req,res) => {
@@ -549,6 +550,199 @@ export const approveDeclineRider = async (req,res) => {
         return res.status(200).json({
             message:"Success",
             data: getRider
+        })
+
+    }
+    catch(error){
+        console.log(error)
+        return res.status(403).json({
+            error,
+            message: 'Something went wrong'
+        });
+    }
+
+}
+
+export const checkAllwithdrawalRequest = async (req,res) => {
+
+    const pageNumber = parseInt(req.query.pageNumber) || 1;
+    const pageSize = parseInt(req.query.pageSize) || 50;
+    const user = req.query.user;
+    const transaction_type =  req.query.transaction_type || null
+    const transaction_status =  req.query.transaction_status || null
+    
+    const minPrice = parseInt(req.query.minPrice) || 0; // Replace with the minimum price
+    const maxPrice = parseInt(req.query.maxPrice) || 500000000; // Replace with the maximum price
+
+    try{
+
+        let query = {}
+
+        if ( user ) {
+            query.user = new mongoose.Types.ObjectId(`${user}`)
+        }
+
+        if ( transaction_type ) {
+            query.transaction_type = { $regex: transaction_type, $options: 'i' }
+        }
+
+        if ( transaction_status ) {
+            query.transaction_status = { $regex: transaction_status, $options: 'i' }
+        }
+
+
+        const priceQuery = {
+            transaction_amount: { $gte: minPrice, $lte: maxPrice }
+        };
+
+        const Orgquery = {  
+            $and: [
+                query,
+                priceQuery
+            ]
+        };
+
+        const aggregationResult = await Transactions.aggregate([
+            // Convert product_price to a numerical value
+            {
+                $addFields: {
+                    transaction_amount: { $toDouble: "$amount" }
+                }
+            },
+            {$match:Orgquery},
+            {
+                $facet: {
+                    paginatedData: [
+                        { $skip: (pageNumber - 1) * pageSize },
+                        { $limit: pageSize },
+                    ],
+                    totalCount: [
+                        { $count: "total" }
+                    ]
+                }
+            }
+
+        ]);
+
+        
+
+        const paginatedData = aggregationResult[0]?.paginatedData;
+        const totalCount = aggregationResult[0]?.totalCount[0]?.total;
+        const totalPages = Math.ceil(totalCount / pageSize);
+        const currentPage = pageNumber > totalPages ? totalPages : pageNumber;
+
+        return res.status(200).json({
+            data: paginatedData,
+            currentPage,
+            totalPages,
+            totalCount
+        });
+
+    }
+    catch(error){
+        console.log(error)
+        return res.status(403).json({
+            error,
+            message: 'Something went wrong'
+        });
+    }
+
+}
+
+export const acceptDeclineWithdrawalRequest = async (rea,res) => {
+
+    try{
+
+        const action = req.body.action
+        const transaction_id = req.params.id
+
+        if ( !transaction_id || !action ) {
+            return res.status(403).json({
+                message:"Action and transaction id are required"
+            })
+        }
+
+        if ( action !== 'approve' && action !== 'decline' ) {
+            return res.status(403).json({
+                message:"Action should either be approve or decline"
+            })
+        }
+
+        const gettransaction = await Transactions.findById(transaction_id);
+
+        if ( !gettransaction ) {
+            return res.status(403).json({
+                message:"Transaction with this ID dose not exist"
+            })
+        }
+
+        if ( gettransaction.transaction_status !== 'pending' ) {
+            return res.status(403).json({
+                message:"Only pending withdrawl request can be accepted or declined"
+            })
+        }
+
+        if ( gettransaction.transaction_type !== 'withdrawal' ) {
+            return res.status(403).json({
+                message:"Only withdrawl request can be accepted or declined"
+            })
+        }
+
+        gettransaction.transaction_status = action === 'approve' ? 'success' : 'failed';
+
+        if ( action === 'approve' ) {
+
+            const createNotificationUser = new Notification({
+                user: gettransaction.user,
+                description: `Your withdrawal request of ${ gettransaction.amount } was approved`,
+                data: {
+                    transaction_id: gettransaction
+                },
+                status: 'Unread',
+                Notification_type: 'Order'
+            })
+    
+            await createNotificationUser.save()
+
+        }
+
+        if ( action === 'failed' ) {
+
+            const getAlltransactions = await Transactions.find({ user: gettransaction.user });
+
+            let wallet_balance = getAlltransactions[ getAlltransactions.length - 1 ].balance_after;
+
+            const createTransaction = new Transactions({
+                user: gettransaction.user,
+                amount: gettransaction.amount,
+                balance_after: wallet_balance + gettransaction.amount,
+                balance_before: wallet_balance,
+                description: `reversal of ${gettransaction.amount} naira`,
+                transaction_status:"success",
+                transaction_type:"reversal",
+                withdrawal_account:{
+                    ...bankDetails._doc
+                }
+            })
+    
+            await createTransaction.save();
+
+            const createNotificationUser = new Notification({
+                user: gettransaction.user,
+                description: `Your withdrawal request of ${ gettransaction.amount } was declined`,
+                data: {
+                    transaction_id: gettransaction
+                },
+                status: 'Unread',
+                Notification_type: 'Order'
+            })
+    
+            await createNotificationUser.save()
+
+        }
+
+        return res.status(200).json({
+            message: `Withdrawal request was ${ action === 'approve' ? 'approved' : 'declined' }`
         })
 
     }

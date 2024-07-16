@@ -7,7 +7,9 @@ import {
     approveOrdeclineStore,
     getStorebyId,
     approveDeclineRider,
-    getRiderdetails
+    getRiderdetails,
+    checkAllwithdrawalRequest,
+    acceptDeclineWithdrawalRequest
 } from "../controllers/admin_controller.js";
 import { verifyAdminToken } from "../middleware/jwt.js";
 
@@ -21,6 +23,8 @@ router.put("/verify_store/:id", verifyAdminToken,approveOrdeclineStore);
 router.get("/get_store/:id", verifyAdminToken,getStorebyId);
 router.put("/verify_rider/:id", verifyAdminToken,approveDeclineRider);
 router.get("/get_rider/:id", verifyAdminToken,getRiderdetails);
+router.get("/get_withdrawal_request", verifyAdminToken,checkAllwithdrawalRequest);
+router.put("/update_withdrawal_request", verifyAdminToken,acceptDeclineWithdrawalRequest);
 
 export default router;
  
