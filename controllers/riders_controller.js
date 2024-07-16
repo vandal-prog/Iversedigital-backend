@@ -1,9 +1,11 @@
+import mongoose from "mongoose";
 import merchantOrders from "../models/merchant_order_model.js";
 import Notification from "../models/notification_model.js"
 import Order from "../models/order_model.js"
 import riderDetails from "../models/riders_details_model.js"
 import Transactions from "../models/transactions_model.js";
-import { all_vehicle_type, working_days, working_hours } from "../utils/special_variables.js"
+import { all_vehicle_type, working_days, working_hours } from "../utils/special_variables.js";
+// import {  } from 'mongoose';
 
 
 function generateSixDigitNumber() {
@@ -329,27 +331,17 @@ export const acceptOrder = async (req,res) => {
             name: `${req.user.first_name} ${req.user.last_name}`,
             email: req.user.email,
             phone_number: req.user.phone_number,
+            profile_img: req.user.profile_img
         }
 
         getOrder.rider_details = riderData;
         getOrder.delivery_code = generateDeliveryCode;
 
-        const updatedOrder =  await getOrder.save();
 
         const createNotificationUser = new Notification({
             user: getOrder.user,
             description: `A rider just accepted your order`,
-            data: {
-                order_id,
-                order_code: getOrder.order_code,
-                delivery_code: generateDeliveryCode,
-                rider_details: {
-                    rider_id: req.user._id,
-                    name: `${req.user.first_name} ${req.user.last_name}`,
-                    email: req.user.email,
-                    phone_number: req.user.phone_number,
-                }
-            },
+            data: getOrder,
             status: 'Unread',
             Notification_type: 'Delivery'
         })
@@ -385,6 +377,8 @@ export const acceptOrder = async (req,res) => {
             await createNotificationStore.save()
 
         }
+
+        const updatedOrder =  await getOrder.save();
 
         return res.status(200).json({
             message:"You have successfully accepted this order",
@@ -439,7 +433,7 @@ export const updatedOrderproductStatus = async ( req, res ) => {
             })
         }
 
-        productId = parseInt( productId, 10 )
+        // productId = parseInt( productId, 10 )
 
         const getOrder = await Order.findById(orderId)
 
@@ -457,7 +451,7 @@ export const updatedOrderproductStatus = async ( req, res ) => {
 
         const allOrderproducts = [...getOrder.products]
 
-        var result = allOrderproducts.find(product => product.id === productId );
+        var result = allOrderproducts.find(product => product.product_id.toString() == productId );
 
         if( !result ){
             return res.status(403).json({
@@ -465,21 +459,21 @@ export const updatedOrderproductStatus = async ( req, res ) => {
             })
         }
 
-        const productIndex = allOrderproducts.findIndex(product => product.id === productId )
+        const productIndex = allOrderproducts.findIndex(product => product.product_id.toString() == productId )
 
         allOrderproducts[productIndex] = {
             ...allOrderproducts[productIndex],
-            product_status: 'Collected'
+            delivery_status: 'Collected'
         }
 
         getOrder.products = allOrderproducts;
         getOrder.order_status = 'In-transit';
 
-        var checkingProduct = allOrderproducts.find(product => product.product_status === 'Pending' );
+        var checkingProduct = allOrderproducts.find(product => product.delivery_status === 'Pending' );
 
         const createNotificationUser = new Notification({
             user: getOrder.user,
-            description: `The rider just picked up ${ result.product.product_title } from the vendor`,
+            description: `The rider just picked up ${ allOrderproducts[productIndex].product_title } from the vendor`,
             data: {
                 order_id:orderId,
                 order_code: getOrder.order_code,
@@ -489,8 +483,8 @@ export const updatedOrderproductStatus = async ( req, res ) => {
         })
 
         const createNotificationMerchant = new Notification({
-            user: result.store_details.id,
-            description: `The rider just picked up ${ result.product.product_title } from your store`,
+            user: allOrderproducts[productIndex].store.user,
+            description: `The rider just picked up ${ allOrderproducts[productIndex].product_title } from your store`,
             data: {
                 order_id:orderId,
                 order_code: getOrder.order_code,
@@ -588,20 +582,20 @@ export const finalDelivery = async ( req, res ) => {
 
             const product = getOrder.products[j];
 
-            const amount = parseInt(product.product.product_price,10) * parseInt(product.product.quantity,10)
+            const amount = parseInt(product.product_price,10) * parseInt(product.quantity,10)
             
-            const getStoretransactions = await Transactions.find({ user: product.store_details.store_owner_details.id })
+            const getStoretransactions = await Transactions.find({ user: product.store.user })
 
             if ( getStoretransactions.length > 0 ) {
 
                 const lastTransaction = getStoretransactions[ getStoretransactions.length - 1 ];
 
                 const createTransaction = new Transactions({
-                    user: product.store_details.store_owner_details.id,
+                    user: product.store.user,
                     amount,
                     balance_after: lastTransaction.balance_after + amount,
                     balance_before: lastTransaction.balance_after,
-                    description: `Sale of ${ product.product.product_title } (${product.product.quantity})`,
+                    description: `Sale of ${ product.product_title } (${product.quantity})`,
                     transaction_status: 'success',
                     transaction_type: 'credit',
                 })
@@ -613,7 +607,7 @@ export const finalDelivery = async ( req, res ) => {
             if ( getStoretransactions.length < 1 ) {
 
                 const createTransaction = new Transactions({
-                    user: product.store_details.store_owner_details.id,
+                    user: product.store.user,
                     amount,
                     balance_after: amount,
                     balance_before: 0,

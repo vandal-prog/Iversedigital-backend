@@ -5,6 +5,7 @@ import Notification from '../models/notification_model.js';
 import Order from '../models/order_model.js';
 import Product from '../models/product_model.js';
 import Store from '../models/store_model.js';
+import Transactions from '../models/transactions_model.js';
 import userAddress from '../models/user_address_model.js';
 
 
@@ -27,7 +28,8 @@ export const createOrderpreview = async (req, res) => {
         const populate_options = {
             path: 'product',
             populate:{
-                path:'store'
+                path:'store',
+                select: '_id store_name user store_category customer_care_number address area state is_Verified'
             }
         };
 
@@ -129,16 +131,22 @@ export const createOrder = async (req, res) => {
 
     try {
 
-        const populate_options = {
+        const populate_options = [
+            {
+                path: 'user',
+                select: 'first_name last_name _id email profile_img phone_number'
+            },
+            {
             path: 'product',
             populate:{
                 path:'store',
+                select: '_id store_name user store_category customer_care_number address area state is_Verified',
                 populate:{
                     path:'user',
                     select:'first_name last_name _id email profile_img phone_number'
                 }
             }
-        };
+        }];
 
         const getUsercartItems = await Cart_item.find({ user: req.user._id }).populate(populate_options);
 
@@ -184,14 +192,46 @@ export const createOrder = async (req, res) => {
                 return
             }
 
+            delivery_fee = delivery_fee + 40
+
             item.totalPrice = parseInt(item.quantity) * parseInt(item.product.product_price);
             order_product.push({
-                ...item._doc,
-                totalPrice: parseInt(item.quantity) * parseInt(item.product.product_price)
+                product_id: item._doc.product._id,
+                product_title: item._doc.product.product_title,
+                product_price: item._doc.product.product_price,
+                product_description: item._doc.product.product_description,
+                product_images: item._doc.product.product_images,
+                isVerified: item._doc.product.isVerified,
+                state: item._doc.product.state,
+                area: item._doc.product.area,
+                address: item._doc.product.address,
+                quantity_available: item._doc.product.quantity_available,
+                quantity_available: item._doc.product.quantity_available,
+                delivery_status: 'Pending',
+                customer:{
+                    first_name: item._doc.user.first_name,
+                    last_name: item._doc.user.last_name,
+                    email: item._doc.user.email,
+                    phone_number: item._doc.user.phone_number,
+                    profile_img: item._doc.user.profile_img,
+                },
+                store: {
+                    user: item._doc.product.store.user,
+                    store: item._doc.product.store,
+                    store_name: item._doc.product.store.store_name,
+                    store_category: item._doc.product.store.store_category,
+                    customer_care_number: item._doc.product.store.customer_care_number,
+                    address: item._doc.product.store.address,
+                    area: item._doc.product.store.area,
+                    state: item._doc.product.store.state,
+                    is_Verified: item._doc.product.store.is_Verified,
+                },
+                totalPrice: parseInt(item.quantity) * parseInt(item.product.product_price),
+                delivery_fee,
+                quantity: item.quantity
             })
             totalprice = totalprice + parseInt(item.quantity) * parseInt(item.product.product_price)
 
-            delivery_fee = delivery_fee + 40
 
             return item;
         });
@@ -216,18 +256,6 @@ export const createOrder = async (req, res) => {
         })
 
         const orderCreated = await createOrder.save();
-
-        const createNotificationUser = new Notification({
-            user: req.user._id,
-            description: `Your order ${generated_order_code} was placed successfully.`,
-            data: {
-                order: orderCreated._doc
-            },
-            status: 'Unread',
-            Notification_type: 'Order'
-        })
-
-        await createNotificationUser.save()
 
         if ( unQualifiedProducts.length > 0 ) {
             return res.status(403).json({
@@ -324,16 +352,51 @@ export const updateOrderById = async (req,res) => {
 
         getOrder.order_status = 'Pending'
 
+        for (let g = 0; g < getOrder.products ; g++) {
+            const product = getOrder.products[g];
+            
+            const newMerchantOrder = new merchantOrders({
+                user: product.store.user,
+                store: product.store.store,
+                order_code: getOrder.order_code,
+                product,
+                quantity: product.quantity,
+                order_status: product.delivery_status,
+                customer: product.customer
+            })
+
+            await newMerchantOrder.save()
+
+            const createNotificationMerchant = new Notification({
+                user: product.store.store.user,
+                description: `A customer just placed an order for one of your product`,
+                data: {
+                    product,
+                    user_delivery_address: product.user_delivery_address  
+                },
+                status: 'Unread',
+                Notification_type: 'Sales'
+            })
+    
+            await createNotificationMerchant.save()
+
+        }
+
         await getOrder.save()
 
-        const getUsercart = await Cart.findOne({ user: getOrder.user })
+        await Cart_item.deleteMany({ user: getOrder.user });
 
-        if ( getUsercart ) {
-            getUsercart.products = []
-            getUsercart.total = 0
+        const createNotificationUser = new Notification({
+            user: getOrder.user,
+            description: `Your order ${getOrder.generated_order_code} was placed successfully.`,
+            data: {
+                order: getOrder.id
+            },
+            status: 'Unread',
+            Notification_type: 'Order'
+        })
 
-            await getUsercart.save()
-        }
+        await createNotificationUser.save()
 
         return res.status(400).json({
             message: 'Order Updated successfully',

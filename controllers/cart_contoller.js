@@ -89,11 +89,15 @@ export const Addtocart = async (req,res) => {
 
         const getproductStore = await Store.findOne({ user: cart_product.user })
 
+        // console.log(getproductStore)
+        // console.log(cart_product)
+
         if ( !getproductStore ) {
             return res.status(403).json({
                     message: 'The store for this product dose not exist'
             })
         }
+
 
         if ( getproductStore.state === '' ||
              getproductStore.area === '' ||
@@ -103,14 +107,14 @@ export const Addtocart = async (req,res) => {
             })
         }
 
-        if ( cart_product.quantity_available < quantity ) {
-            return ({
+        if ( parseInt(cart_product.quantity_available,10) < quantity ) {
+            return res.status(403).json({
                 message:"Product is currently out of stock"
             });
         }
 
-
         let UserCartItem = await Cart_item.findOne({ user: user._id, product: product_id })
+        
 
         if ( !UserCartItem ) {
             UserCartItem = new Cart_item({
@@ -118,7 +122,7 @@ export const Addtocart = async (req,res) => {
                 user: user._id,
                 quantity
             })
-
+ 
             UserCartItem = await UserCartItem.save();
 
         }else{
@@ -134,6 +138,7 @@ export const Addtocart = async (req,res) => {
         };
 
         const getUsercartItems = await Cart_item.find({ user: user._id }).populate(populate_options);
+
 
         let UpdatedCart = []
         let totalprice = 0
