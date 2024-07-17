@@ -755,3 +755,128 @@ export const acceptDeclineWithdrawalRequest = async (rea,res) => {
     }
 
 }
+
+export const matchingRider = async (req,res) => {
+
+    try{
+
+        const rider_id = req.body.rider_id
+        const order_id = req.body.order_id
+
+
+        if ( !rider_id || !order_id ) {
+            return res.status(400).json({
+                message:"rider id and order id is required"
+            })
+        }
+
+        const getRiderextradet = await riderDetails.findOne({ user: rider_id })
+
+        if( !getRiderextradet ){
+
+            return res.status(403).json({
+                message:"Only verified riders can be assinged orders"
+            })  
+        }
+
+        if ( getRiderextradet.rider_status === 'in_transit' ) {
+            return res.status(403).json({
+                message:"You cannot assign to this rider, he is currently on transit"
+            })  
+        }
+
+        if ( !order_id ) {
+            return res.status(400).json({
+                message:"Order id is required"
+            })
+        }
+
+        const getOrder = await Order.findById(order_id);
+
+        if ( !getOrder ) {
+            return res.status(403).json({
+                message:"Order with this id dose not exist"
+            })
+        }
+
+        if ( getOrder.order_status !== 'Pending' ) {
+            return res.status(403).json({
+                message:"Order has already been taken by another rider"
+            })
+        }
+
+        const generatePickUpCode = generateSixDigitNumber();
+
+        const generateDeliveryCode = generateSixDigitNumber();
+
+        getOrder.order_status = 'Order-accepted'
+
+        const riderData = {
+            rider_id: req.user._id,
+            name: `${req.user.first_name} ${req.user.last_name}`,
+            email: req.user.email,
+            phone_number: req.user.phone_number,
+            profile_img: req.user.profile_img
+        }
+
+        getOrder.rider_details = riderData;
+        getOrder.delivery_code = generateDeliveryCode;
+
+
+        const createNotificationUser = new Notification({
+            user: getOrder.user,
+            description: `A rider just accepted your order`,
+            data: getOrder,
+            status: 'Unread',
+            Notification_type: 'Delivery'
+        })
+
+        await createNotificationUser.save()
+
+        getRiderextradet.rider_status = 'in_transit'
+
+        await getRiderextradet.save()
+
+        for (let k = 0; k < getOrder.products.length; k++) {
+            const productOrdered = getOrder.products[k];
+
+            getOrder.products[k] = {
+                ...getOrder.products[k],
+                pick_up_code: generatePickUpCode
+            }
+            
+            const createNotificationStore = new Notification({
+                user: getOrder.user,
+                description: `A rider is coming to pick up ${ getOrder.order_code } order`,
+                data: {
+                    order_id,
+                    order_code: getOrder.order_code,
+                    pick_up_code: generatePickUpCode,
+                    product: productOrdered,
+                    rider_details: riderData,
+                },
+                status: 'Unread',
+                Notification_type: 'Delivery'
+            })
+    
+            await createNotificationStore.save()
+
+        }
+
+        const updatedOrder =  await getOrder.save();
+
+        return res.status(200).json({
+            message:"You have successfully matched this order with a rider",
+            data: updatedOrder
+        })
+
+    }
+    catch(error){
+        console.log(error)
+        return res.status(403).json({
+            error,
+            message: 'Something went wrong'
+        });
+    }
+
+}
