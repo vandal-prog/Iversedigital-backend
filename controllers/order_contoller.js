@@ -334,11 +334,12 @@ export const updateOrderById = async (req,res) => {
 
     try{
 
-        const orderId = req.params.id
+        const orderId = req.query.id
+        const reference = req.query.reference
 
-        if ( !orderId ) {
+        if ( !orderId || !reference ) {
             return res.status(400).json({
-                message: 'Order id is required'
+                message: 'Order id and reference are required'
             })
         }
 
@@ -398,7 +399,7 @@ export const updateOrderById = async (req,res) => {
 
         await createNotificationUser.save()
 
-        return res.status(400).json({
+        return res.status(200).json({
             message: 'Order Updated successfully',
             data: getOrder
         })

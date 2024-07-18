@@ -6,7 +6,7 @@ const router = express.Router();
 
 router.get('/create', verifyUserToken ,createOrder);
 router.get('/my_orders', verifyUserToken ,getUserorders);
-router.put('/update_order_afterpayment/:id', verifyUserToken ,updateOrderById);
+router.put('/update_order_afterpayment', verifyUserToken ,updateOrderById);
 router.get('/merchant_orders', verifyUserToken ,getMerchantOrders);
 router.get('/track_order' ,trackOrder);
 router.get('/all_orders', getAllOrders)
