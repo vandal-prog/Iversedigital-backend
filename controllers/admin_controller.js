@@ -649,7 +649,7 @@ export const checkAllwithdrawalRequest = async (req,res) => {
 
 }
 
-export const acceptDeclineWithdrawalRequest = async (rea,res) => {
+export const acceptDeclineWithdrawalRequest = async (req,res) => {
 
     try{
 
