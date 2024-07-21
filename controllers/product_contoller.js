@@ -249,7 +249,7 @@ export const createProduct = async (req,res) => {
     try{
 
         const product_title = req.body.product_title
-        const product_price = req.body.product_price
+        let product_price = req.body.product_price
         const product_description = req.body.product_description
         const product_images = req.body.product_images
         const store = req.body.store_id
@@ -271,6 +271,10 @@ export const createProduct = async (req,res) => {
                 });
 
         }
+
+        product_price = parseInt(product_price) + 70
+
+        product_price = toString(product_price)
 
         const checkStore = await Store.findById(store)
 
@@ -368,7 +372,7 @@ export const editProduct = async (req,res) => {
 
         const productId = req.params.id;
         const product_title = req.body.product_title
-        const product_price = req.body.product_price
+        let product_price = req.body.product_price
         const product_description = req.body.product_description
         const product_images = req.body.product_images
         const state = req.body.state
@@ -391,12 +395,6 @@ export const editProduct = async (req,res) => {
             });
         }
 
-        console.log({
-            user_id:req.user._id,
-            user_ib: getProduct.user,
-            role: req.user.role
-        })
-
         if ( req.user._id !== getProduct.user && req.user.role !== 'admin' ) {
             return res.status(403).json({
                 error:'You are not authenticated to perform this action',
@@ -409,6 +407,11 @@ export const editProduct = async (req,res) => {
         }
 
         if ( product_price ) {
+
+            product_price = parseInt(product_price) + 70
+
+            product_price = toString(product_price)
+
             getProduct.product_price = product_price;
         }
 
