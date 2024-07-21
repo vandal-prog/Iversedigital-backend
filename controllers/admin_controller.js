@@ -646,7 +646,7 @@ export const checkAllwithdrawalRequest = async (req,res) => {
             message: 'Something went wrong'
         });
     }
-
+ 
 }
 
 export const acceptDeclineWithdrawalRequest = async (req,res) => {
