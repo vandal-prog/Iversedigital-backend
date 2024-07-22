@@ -131,6 +131,7 @@ export const createRiderdetails = async ( req, res ) => {
                 rider_status:'offline',
                 end_hour,
                 start_hour,
+                isVerified: false
             })
 
             const createdRiderdetails = await createDetails.save();
