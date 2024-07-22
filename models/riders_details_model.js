@@ -51,7 +51,7 @@ const riderDetailsSchema = new mongoose.Schema({
     },
     isRejected: {
         type: Boolean,
-        required: false 
+        required: false  
     },
     vehicle_plate_number:{
         type: String,

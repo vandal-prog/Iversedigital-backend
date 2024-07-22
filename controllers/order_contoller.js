@@ -14,6 +14,72 @@ function generateOrdercode() {
         Math.random().toString(36).slice(2));
 }
 
+function generateServiceCharge (total_product_cost) {
+
+    if ( total_product_cost < 1559 && total_product_cost > 0 ) {
+        return 150
+    }
+
+    if ( total_product_cost < 3001 && total_product_cost > 1559 ) {
+        return 200
+    }
+
+    if ( total_product_cost < 5001 && total_product_cost > 3001 ) {
+        return 250
+    }
+
+    if ( total_product_cost < 7001 && total_product_cost > 5001 ) {
+        return 350
+    }
+
+    if ( total_product_cost < 9001 && total_product_cost > 7001 ) {
+        return 400
+    }
+
+    if ( total_product_cost > 9001 ) {
+        return 500
+    }
+
+    return 500
+
+}
+
+const generateDeliveryFee = ( user_area, delivery_area ) => {
+
+    
+  
+    if ( user_area.includes('ibafo') && delivery_area.includes('mowe') ){
+      return 1100
+    }
+  
+    if ( user_area.includes('magboro') && delivery_area.includes('mowe') ){
+      return 1300
+    }
+  
+    if ( user_area.includes('arepo') && delivery_area.includes('mowe') ){
+      return 1500
+    }
+  
+    if ( user_area.includes('magboro') && delivery_area.includes('arepo') ){
+      return 1000
+    }
+  
+    if ( user_area.includes('arepo') && delivery_area.includes('magboro') ){
+      return 1000
+    }
+  
+    if ( user_area.includes('magboro') && delivery_area.includes('ibafo') ){
+      return 1000
+    }
+  
+    if ( user_area.includes('arepo') && delivery_area.includes('ibafo') ){
+      return 1000
+    }
+
+    return 1500
+  
+  }
+
 // Before Payment
 export const createOrderpreview = async (req, res) => {
 
@@ -82,7 +148,7 @@ export const createOrderpreview = async (req, res) => {
             })
             totalprice = totalprice + parseInt(item.quantity) * parseInt(item.product.product_price)
 
-            delivery_fee = delivery_fee + 40
+            delivery_fee = delivery_fee + generateDeliveryFee( getuserAddress.area.toLowerCase() ,item.product.store.area.toLowerCase() )
 
             return item;
         });
@@ -99,7 +165,7 @@ export const createOrderpreview = async (req, res) => {
             user: req.user._id,
             products: order_product,
             product_total: totalprice,
-            service_charge: 10,
+            service_charge: generateServiceCharge(totalprice),
             delivery_fee,
             user_delivery_address: getuserAddress,
             order_status: 'Created',
@@ -176,7 +242,7 @@ export const createOrder = async (req, res) => {
         const generated_order_code = generateOrdercode()
 
         let totalprice = 0
-        let service_charge = 30
+        // let service_charge = 30
         let delivery_fee = 0
 
         getUsercartItems.map(item => {
@@ -192,7 +258,7 @@ export const createOrder = async (req, res) => {
                 return
             }
 
-            delivery_fee = delivery_fee + 40
+            delivery_fee = delivery_fee + generateDeliveryFee( getuserAddress.area.toLowerCase() ,item.product.store.area.toLowerCase() )
 
             item.totalPrice = parseInt(item.quantity) * parseInt(item.product.product_price);
             order_product.push({
@@ -232,15 +298,16 @@ export const createOrder = async (req, res) => {
             })
             totalprice = totalprice + parseInt(item.quantity) * parseInt(item.product.product_price)
 
-
             return item;
         });
+
+        let service_charge = generateServiceCharge(totalprice)
 
         const createOrder = new Order({
             user: req.user._id,
             products: order_product,
             product_total: totalprice,
-            service_charge:30,
+            service_charge:service_charge,
             delivery_fee,
             user_delivery_address: {
                 ...getuserAddress._doc,

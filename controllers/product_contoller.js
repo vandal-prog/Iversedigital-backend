@@ -25,16 +25,137 @@ export const getAllproduct = async (req,res) => {
 
         let query = {}
 
-        if ( req.user ) {
-            
-            if ( req.user.role !== 'admin' ) {
-                query.isVerified = true
-            }else{
+        if ( category ) {
+            query.category = new mongoose.Types.ObjectId(`${category}`)
+        }
+
+        if ( sub_category ) {
+            query.subCategory = new mongoose.Types.ObjectId(`${sub_category}`)
+        }
+
+        if ( store ) {
+            query.store = new mongoose.Types.ObjectId(`${store}`)
+        }
+
+        if ( titleSearch ) {
+            query.product_title = { $regex: titleSearch, $options: 'i' }
+        }
+
+        if ( area ) {
+            query.area = { $regex: area, $options: 'i' }
+        }
+
+        if ( state ) {
+            query.state = { $regex: state, $options: 'i' }
+        }
+
+        if ( address ) {
+            query.address = { $regex: address, $options: 'i' }
+        }
+
+        // const featureQuery = { 
+        //     'features.brand': 'HP', 
+        // };
+
+
+        const priceQuery = {
+            product_price_num: { $gte: minPrice, $lte: maxPrice }
+        };
+
+        const Orgquery = {  
+            $and: [
+                query,
+                // featureQuery,
+                priceQuery
+            ]
+        };
+
+        const populate_options = [
+            { from: 'categories', localField: 'category', foreignField: '_id', as: 'category' },
+            { from: 'subcategories', localField: 'subCategory', foreignField: '_id', as: 'subCategory' },
+            { from: 'stores', localField: 'store', foreignField: '_id', as: 'store' },
+        ];
+
+        const lookupStages = populate_options.map(option => ({
+            $lookup: {
+                from: option.from,
+                localField: option.localField,
+                foreignField: option.foreignField,
+                as: option.as
+            }
+        }));
+        
+
+        const aggregationResult = await Product.aggregate([
+            // Convert product_price to a numerical value
+            {
+                $addFields: {
+                    product_price_num: { $toDouble: "$product_price" }
+                }
+            },
+            {$match:Orgquery},
+            {
+                $facet: {
+                    paginatedData: [
+                        { $skip: (pageNumber - 1) * pageSize },
+                        { $limit: pageSize },
+                        ...lookupStages
+                    ],
+                    totalCount: [
+                        { $count: "total" }
+                    ]
+                }
             }
 
-        }else{
-            query.isVerified = true
-        }
+        ]);
+
+        
+
+        const paginatedData = aggregationResult[0]?.paginatedData;
+        const totalCount = aggregationResult[0]?.totalCount[0]?.total;
+        const totalPages = Math.ceil(totalCount / pageSize);
+        const currentPage = pageNumber > totalPages ? totalPages : pageNumber;
+
+        return res.status(200).json({
+            data: paginatedData,
+            currentPage,
+            totalPages,
+            totalCount
+        });
+
+    }
+    catch(error){
+        console.log(error)
+        return res.status(403).json({
+            has_error: true,
+            error,
+            message: 'Something went wrong'
+        });
+    }
+
+}
+
+
+export const getAllproductUser = async (req,res) => {
+
+    const pageNumber = parseInt(req.query.pageNumber) || 1;
+    const pageSize = parseInt(req.query.pageSize) || 50;
+    const category = req.query.category;
+    const sub_category = req.query.sub_category;
+    const titleSearch =  req.query.search || null
+    const area =  req.query.area || null
+    const state =  req.query.state || null
+    const address =  req.query.address || null
+    const store =  req.query.store || null
+    
+    const minPrice = parseInt(req.query.minPrice) || 0; // Replace with the minimum price
+    const maxPrice = parseInt(req.query.maxPrice) || 500000000; // Replace with the maximum price
+
+    try{
+
+        let query = {}
+
+        query.isVerified = true
 
         if ( category ) {
             query.category = new mongoose.Types.ObjectId(`${category}`)
@@ -146,6 +267,7 @@ export const getAllproduct = async (req,res) => {
 
 }
 
+
 export const getProductbyId = async (req,res) => {
 
     try{
@@ -249,7 +371,7 @@ export const createProduct = async (req,res) => {
     try{
 
         const product_title = req.body.product_title
-        const product_price = req.body.product_price
+        let product_price = req.body.product_price
         const product_description = req.body.product_description
         const product_images = req.body.product_images
         const store = req.body.store_id
@@ -271,6 +393,10 @@ export const createProduct = async (req,res) => {
                 });
 
         }
+
+        product_price = parseInt(product_price) + 70
+
+        product_price = toString(product_price)
 
         const checkStore = await Store.findById(store)
 
@@ -368,7 +494,7 @@ export const editProduct = async (req,res) => {
 
         const productId = req.params.id;
         const product_title = req.body.product_title
-        const product_price = req.body.product_price
+        let product_price = req.body.product_price
         const product_description = req.body.product_description
         const product_images = req.body.product_images
         const state = req.body.state
@@ -391,12 +517,6 @@ export const editProduct = async (req,res) => {
             });
         }
 
-        console.log({
-            user_id:req.user._id,
-            user_ib: getProduct.user,
-            role: req.user.role
-        })
-
         if ( req.user._id !== getProduct.user && req.user.role !== 'admin' ) {
             return res.status(403).json({
                 error:'You are not authenticated to perform this action',
@@ -409,6 +529,11 @@ export const editProduct = async (req,res) => {
         }
 
         if ( product_price ) {
+
+            product_price = parseInt(product_price) + 70
+
+            product_price = toString(product_price)
+
             getProduct.product_price = product_price;
         }
 
@@ -551,9 +676,6 @@ export const deleteProduct = async (req,res) => {
     }
 
 }
-
-
-
 
 
 
@@ -797,3 +919,4 @@ export const GetProductReview = async (req,res) => {
     }
 
 }
+ 

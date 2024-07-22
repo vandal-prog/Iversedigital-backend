@@ -9,13 +9,16 @@ import {
   getProductLikes,
   GetProductReview,
   ReviewProduct,
-  getProductbystore
+  getProductbystore,
+  getAllproductUser
 } from "../controllers/product_contoller.js";
-import { verifyUserToken, verifyUserTokenText } from "../middleware/jwt.js";
+import { verifyUserToken, verifyUserTokenText, verifyAdminToken } from "../middleware/jwt.js";
 
 const router = express.Router();
 
-router.get("/", verifyUserTokenText, getAllproduct);
+
+router.get("/", getAllproductUser);
+router.get("/admin/", verifyAdminToken, getAllproduct);
 router.get("/:id", getProductbyId);
 router.get("/liked/products/", verifyUserToken ,AlluserLikedProduct);
 router.post("/create_product", verifyUserToken, createProduct);

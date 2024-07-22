@@ -25,7 +25,7 @@ router.get("/get_store/:id", verifyAdminToken,getStorebyId);
 router.put("/verify_rider/:id", verifyAdminToken,approveDeclineRider);
 router.get("/get_rider/:id", verifyAdminToken,getRiderdetails);
 router.get("/get_withdrawal_request", verifyAdminToken,checkAllwithdrawalRequest);
-router.put("/update_withdrawal_request", verifyAdminToken,acceptDeclineWithdrawalRequest);
+router.put("/update_withdrawal_request/:id", verifyAdminToken,acceptDeclineWithdrawalRequest);
 router.put("/match_rider", verifyAdminToken,matchingRider);
 
 export default router;
