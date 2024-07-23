@@ -622,7 +622,7 @@ export const getAllOrders = async (req,res) => {
                     paginatedData: [
                         { $skip: (pageNumber - 1) * pageSize },
                         { $limit: pageSize },
-                        ...lookupStages
+                        // ...lookupStages
                     ],
                     totalCount: [
                         { $count: "total" }
