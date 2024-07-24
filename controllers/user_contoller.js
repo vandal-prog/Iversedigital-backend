@@ -224,10 +224,11 @@ export const updateUseraddress = async (req,res) => {
         const state = req.body.state
         const area = req.body.area
         const address = req.body.address
+        const street = req.body.street
 
-        if ( !state || !area || !address ) {
+        if ( !state || !area || !address || !street ) {
             return res.status(400).json({
-                message:'state, area and address are required'
+                message:'state, area, street and address are required'
             })
         }
 
@@ -239,7 +240,8 @@ export const updateUseraddress = async (req,res) => {
                 user: req.user._id,
                 state,
                 area,
-                address
+                address,
+                street
             })
 
             const createdAddress = await createAddress.save()
@@ -254,6 +256,7 @@ export const updateUseraddress = async (req,res) => {
         getUserAddress.state = state
         getUserAddress.area = area
         getUserAddress.address = address
+        getUserAddress.street = street
 
         await getUserAddress.save()
 

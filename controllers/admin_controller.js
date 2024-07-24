@@ -1040,3 +1040,26 @@ export const getAlldeliveryRoutes = async (req,res) => {
     }
 
 }
+
+export const deletedeliveryRoutes = async (req,res) => {
+
+    try{
+
+        const routeId = req.params.id
+
+        const deletedDeliveryRoutes = await deliveryAddress.findByIdAndDelete(routeId);
+
+        return res.status(200).json({
+            data: deletedDeliveryRoutes,
+            message:"Delivery Route was deleted successfully"
+        })
+    }
+    catch(error){
+        console.log(error)
+        return res.status(403).json({
+            error,
+            message: 'Something went wrong'
+        });
+    }
+
+}

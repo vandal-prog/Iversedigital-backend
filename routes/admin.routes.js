@@ -13,7 +13,8 @@ import {
     matchingRider,
     createDeliveryRoute,
     getAlldeliveryRoutes,
-    updateDeliveryRoute
+    updateDeliveryRoute,
+    deletedeliveryRoutes
 } from "../controllers/admin_controller.js";
 import { verifyAdminToken } from "../middleware/jwt.js";
 
@@ -33,6 +34,7 @@ router.put("/match_rider", verifyAdminToken,matchingRider);
 router.post("/createte_delivery_route", verifyAdminToken,createDeliveryRoute);
 router.get("/get_delivery_routes", verifyAdminToken,getAlldeliveryRoutes);
 router.put("/update_delivery_route/:id", verifyAdminToken,updateDeliveryRoute);
+router.delete("/delete_delivery_route/:id", verifyAdminToken,deletedeliveryRoutes);
 
 export default router;
  
