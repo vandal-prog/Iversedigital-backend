@@ -1,4 +1,5 @@
 import Category from '../models/category_model.js';
+import deliveryAddress from '../models/delivery_address_model.js';
 import Notification from '../models/notification_model.js';
 import Product from '../models/product_model.js';
 import Profile from '../models/profile_model.js';
@@ -641,6 +642,70 @@ export const StoreProducts = async (req,res) => {
 
     }
     catch(error){
+        console.log(error)
+        return res.status(403).json({
+            has_error: true,
+            error,
+            message: 'Something went wrong'
+        });
+    }
+
+}
+
+export const getAlldeliveryRoutes = async (req,res) => {
+
+    try {
+        
+        const getDeliveryRoutes = await deliveryAddress.find();
+
+        const from_state = []
+        const from_area = []
+        const from_street = []
+
+        for (let k = 0; k < getDeliveryRoutes.length; k++) {
+            const element = getDeliveryRoutes[k];
+            
+            if ( !from_state.includes(element.from_state) ) {
+                from_state.push(element.from_state)
+            }
+
+            if ( !from_area.includes(element.from_area) ) {
+                from_area.push(element.from_area)
+            }
+
+            if ( !from_street.includes(element.from_street) ) {
+                from_street.push(element.from_street)
+            }
+
+
+
+
+
+
+            if ( !from_state.includes(element.to_state) ) {
+                from_state.push(element.to_state)
+            }
+
+            if ( !from_area.includes(element.to_area) ) {
+                from_area.push(element.to_area)
+            }
+
+            if ( !from_street.includes(element.to_street) ) {
+                from_street.push(element.to_street)
+            }
+
+        }
+
+        return res.status(200).json({
+            data: {
+                states: [...from_state],
+                areas: [...from_area],
+                streets: [...from_street]
+            },
+            message:"Delivery Routes gottten successfully"
+        })
+
+    } catch (error) {
         console.log(error)
         return res.status(403).json({
             has_error: true,

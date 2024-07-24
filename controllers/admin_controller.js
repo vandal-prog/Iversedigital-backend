@@ -5,6 +5,7 @@ import Store from "../models/store_model.js";
 import User from "../models/user_model.js";
 import riderDetails from "../models/riders_details_model.js";
 import Transactions from "../models/transactions_model.js";
+import deliveryAddress from "../models/delivery_address_model.js";
 
 
 export const approveOrdeclineProduct = async (req,res) => {
@@ -870,6 +871,165 @@ export const matchingRider = async (req,res) => {
             data: updatedOrder
         })
 
+    }
+    catch(error){
+        console.log(error)
+        return res.status(403).json({
+            error,
+            message: 'Something went wrong'
+        });
+    }
+
+}
+
+export const createDeliveryRoute = async (req,res) => {
+
+    try{
+
+        const from_state = req.body.from_state
+        const from_area = req.body.from_area
+        const from_street = req.body.from_street
+        const to_state = req.body.to_state
+        const to_area = req.body.to_area
+        const to_street = req.body.to_street
+        const delivery_fee = parseInt(req.body.delivery_fee)
+
+        if ( !from_state ||
+             !from_area ||
+             !from_street ||
+             !to_state ||
+             !to_area ||
+             !to_street ||
+             !delivery_fee
+         ) {
+            return res.status(400).json({
+                message:"from_state, from_area, from_street, to_state, to_area, delivery_fee and to_street are required"
+            })
+        }
+
+        const checkIfexist = await deliveryAddress.findOne({
+            from_state,from_area,from_street,to_area,to_state,to_street
+        })
+
+        if ( checkIfexist ) {
+            return res.status(403).json({
+                message:"This delivery routes already exist"
+            })
+        }
+
+        const createDelivery = new deliveryAddress({
+            from_state,
+            from_area,
+            from_street,
+            to_state,
+            to_area,
+            to_street,
+            delivery_fee
+        })
+
+        const createdDelivery = await createDelivery.save();
+
+        return res.status(200).json({
+            data: createdDelivery,
+            message:"Delivery Routes saved successfully"
+        })
+
+    }
+    catch(error){
+        console.log(error)
+        return res.status(403).json({
+            error,
+            message: 'Something went wrong'
+        });
+    }
+
+}
+
+export const updateDeliveryRoute = async (req,res) => {
+
+    try{
+
+        const from_state = req.body.from_state
+        const from_area = req.body.from_area
+        const from_street = req.body.from_street
+        const to_state = req.body.to_state
+        const to_area = req.body.to_area
+        const to_street = req.body.to_street
+        const delivery_fee = req.body.delivery_fee
+        const routeId = req.params.id
+        
+        if ( 
+             !routeId
+         ) {
+            return res.status(400).json({
+                message:"routeId is required"
+            })
+        }
+
+        const checkIfexist = await deliveryAddress.findById(routeId)
+
+        if ( !checkIfexist ) {
+            return res.status(403).json({
+                message:"This delivery routes with this id dose not exist"
+            })
+        }
+
+        if ( from_state ) {
+            checkIfexist.from_state = from_state
+        }
+
+        if ( from_area ) {
+            checkIfexist.from_area = from_area
+        }
+
+        if ( from_street ) {
+            checkIfexist.from_street = from_street
+        }
+
+        if ( to_state ) {
+            checkIfexist.to_state = to_state
+        }
+
+        if ( to_area ) {
+            checkIfexist.to_area = to_area
+        }
+
+        if ( to_street ) {
+            checkIfexist.to_street = to_street
+        }
+
+        if ( delivery_fee ) {
+            checkIfexist.delivery_fee = delivery_fee
+        }
+
+        await checkIfexist.save();
+
+        return res.status(200).json({
+            data: checkIfexist,
+            message:"Delivery Routes saved successfully"
+        })
+
+    }
+    catch(error){
+        console.log(error)
+        return res.status(403).json({
+            error,
+            message: 'Something went wrong'
+        });
+    }
+
+}
+
+export const getAlldeliveryRoutes = async (req,res) => {
+
+    try{
+
+        const getDeliveryRoutes = await deliveryAddress.find();
+
+        return res.status(200).json({
+            data: getDeliveryRoutes,
+            message:"Delivery Routes gottten successfully"
+        })
     }
     catch(error){
         console.log(error)
