@@ -441,6 +441,13 @@ export const createProduct = async (req,res) => {
             });
         }
 
+        if ( !checkStore.street ) {
+            return res.status(400).json({
+                error:'You need to update the street field in your store address',
+                message: 'You need to update the street field in your store address'
+            }); 
+        }
+
         const createProduct = new Product({
             product_title,
             product_price,
@@ -449,6 +456,7 @@ export const createProduct = async (req,res) => {
             address: checkStore.address,
             area: checkStore.area,
             state: checkStore.state,
+            street: checkStore.street,
             category: product_category,
             subCategory: product_subCategory,
             user: req.user._id,
@@ -500,6 +508,7 @@ export const editProduct = async (req,res) => {
         const state = req.body.state
         const area = req.body.lga
         const address = req.body.address
+        const street = req.body.street
         const product_category = req.body.category
         const product_subCategory = req.body.subCategory
         const product_features = req.body.product_features
@@ -569,6 +578,10 @@ export const editProduct = async (req,res) => {
 
         if ( address ) {
             getProduct.address = address
+        }
+
+        if ( street ) {
+            getProduct.street = street
         }
 
         if ( product_features ) {

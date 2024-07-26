@@ -41,6 +41,11 @@ const ProductSchema = new mongoose.Schema({
         required: true,
         unique: false 
     },
+    street: {
+        type: String,
+        required: false,
+        unique: false 
+    },
     address: {
         type: String,
         required: true,

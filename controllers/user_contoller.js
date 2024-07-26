@@ -385,6 +385,7 @@ export const becomeMarchant = async (req,res) => {
         const address = req.body.address
         const area = req.body.area
         const state = req.body.state
+        const street = req.body.street
         const has_rider = req.body.has_rider
         const isCAC_verified = req.body.isCAC_verified
         const CAC_number = req.body.CAC_number
@@ -402,9 +403,9 @@ export const becomeMarchant = async (req,res) => {
         }
 
         if ( !store_name || !store_category || !customer_care_number || !address
-            || !area || !state ) {
+            || !area || !state || !street ) {
             return res.status(400).json({
-                message:'store_name, store_category, customer_care_number, address, area and state are required',
+                message:'store_name, store_category, customer_care_number, address, street, area and state are required',
             })
         }
 
@@ -440,6 +441,7 @@ export const becomeMarchant = async (req,res) => {
             address,
             area,
             state,
+            street,
             is_Opened: true,
             is_Available: true,
             has_rider: has_rider ? true : false,
@@ -545,6 +547,7 @@ export const edituserStore = async (req,res) => {
         const address = req.body.address
         const area = req.body.area
         const state = req.body.state
+        const street = req.body.street
         const has_rider = req.body.has_rider
         const isCAC_verified = req.body.isCAC_verified
         const CAC_number = req.body.CAC_number
@@ -596,6 +599,10 @@ export const edituserStore = async (req,res) => {
 
         if ( area ) {
             getUserstore.area = area
+        }
+
+        if ( street ) {
+            getUserstore.street = street
         }
 
         if ( state ) {

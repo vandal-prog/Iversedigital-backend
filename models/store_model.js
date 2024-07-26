@@ -39,6 +39,11 @@ const StoreSchema = new mongoose.Schema({
         unique: false,
         required: true
     },
+    street: {
+        type: String,
+        unique: false,
+        required: false
+    },
     has_rider: {
         type: Boolean,
         unique: false,
