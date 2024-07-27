@@ -17,6 +17,7 @@ export const getAllproduct = async (req,res) => {
     const state =  req.query.state || null
     const address =  req.query.address || null
     const store =  req.query.store || null
+    const checkverified =  req.query.isVerified
     
     const minPrice = parseInt(req.query.minPrice) || 0; // Replace with the minimum price
     const maxPrice = parseInt(req.query.maxPrice) || 500000000; // Replace with the maximum price
@@ -24,6 +25,8 @@ export const getAllproduct = async (req,res) => {
     try{
 
         let query = {}
+
+        query.isVerified =  checkverified === 'true' ? true : false
 
         if ( category ) {
             query.category = new mongoose.Types.ObjectId(`${category}`)
@@ -65,7 +68,6 @@ export const getAllproduct = async (req,res) => {
         const Orgquery = {  
             $and: [
                 query,
-                // featureQuery,
                 priceQuery
             ]
         };
