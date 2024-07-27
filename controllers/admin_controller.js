@@ -507,13 +507,9 @@ export const getallRiders = async (req,res) => {
 
     const pageNumber = parseInt(req.query.pageNumber) || 1;
     const pageSize = parseInt(req.query.pageSize) || 50;
-    const category = req.query.category;
-    const sub_category = req.query.sub_category;
-    const titleSearch =  req.query.search || null
     const area =  req.query.area || null
     const state =  req.query.state || null
     const address =  req.query.address || null
-    const store =  req.query.store || null
     const user =  req.query.user || null
     const checkverified =  req.query.isVerified
     const nin_identification_number = parseInt(req.query.nin_identification_number)
