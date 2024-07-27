@@ -26,7 +26,9 @@ export const getAllproduct = async (req,res) => {
 
         let query = {}
 
-        query.isVerified =  checkverified === 'true' ? true : false
+        console.log( typeof checkverified )
+
+        query.isVerified =  checkverified == 'true' ? true : false
 
         if ( category ) {
             query.category = new mongoose.Types.ObjectId(`${category}`)
