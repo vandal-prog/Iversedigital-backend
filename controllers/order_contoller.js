@@ -1,5 +1,6 @@
 import Cart_item from '../models/cart_items_model.js';
 import Cart from '../models/cart_model.js';
+import deliveryAddress from '../models/delivery_address_model.js';
 import merchantOrders from '../models/merchant_order_model.js';
 import Notification from '../models/notification_model.js';
 import Order from '../models/order_model.js';
@@ -44,39 +45,25 @@ function generateServiceCharge (total_product_cost) {
 
 }
 
-const generateDeliveryFee = ( user_area, delivery_area ) => {
+const generateDeliveryFee = ( user_delivery, store_delivery, getallDeliveryAddress ) => {
 
-    
-  
-    if ( user_area.includes('ibafo') && delivery_area.includes('mowe') ){
-      return 1100
-    }
-  
-    if ( user_area.includes('magboro') && delivery_area.includes('mowe') ){
-      return 1300
-    }
-  
-    if ( user_area.includes('arepo') && delivery_area.includes('mowe') ){
-      return 1500
-    }
-  
-    if ( user_area.includes('magboro') && delivery_area.includes('arepo') ){
-      return 1000
-    }
-  
-    if ( user_area.includes('arepo') && delivery_area.includes('magboro') ){
-      return 1000
-    }
-  
-    if ( user_area.includes('magboro') && delivery_area.includes('ibafo') ){
-      return 1000
-    }
-  
-    if ( user_area.includes('arepo') && delivery_area.includes('ibafo') ){
-      return 1000
-    }
+        const filteredAddress = getallDeliveryAddress.filter( 
+            address => 
+                address.from_state == store_delivery.state && 
+                address.from_area == store_delivery.area &&
+                address.from_street == store_delivery.street &&
+                address.to_state == user_delivery.state &&
+                address.to_area == user_delivery.area &&
+                address.to_street == user_delivery.street
+        )
 
-    return 1500
+        console.log(filteredAddress)
+
+        if ( filteredAddress.length < 1 ) {
+            return 1000
+        }
+
+        return filteredAddress[0].delivery_fee
   
   }
 
@@ -95,13 +82,15 @@ export const createOrderpreview = async (req, res) => {
             path: 'product',
             populate:{
                 path:'store',
-                select: '_id store_name user store_category customer_care_number address area state is_Verified'
+                select: '_id store_name user store_category customer_care_number address area state is_Verified street'
             }
         };
 
         const getUsercartItems = await Cart_item.find({ user: req.user._id }).populate(populate_options);
 
         const getuserAddress = await userAddress.findOne({ user: req.user._id })
+
+        const getallDeliveryAddress = await deliveryAddress.find();
 
         if ( getUsercartItems.length < 1 ) {
             return res.status(400).json({
@@ -115,11 +104,15 @@ export const createOrderpreview = async (req, res) => {
             })
         }
 
-        if (getuserAddress.state === '' || getuserAddress.area === '' || getuserAddress.address === '') {
-            return res.status(400).json({
-                message: 'User has to set their delivery details'
-            })
-        }
+        if ( getuserAddress.state === '' || 
+            getuserAddress.area === '' || 
+            getuserAddress.address === '' || 
+            getuserAddress.street === '' ||
+            !getuserAddress.state || !getuserAddress.area || !getuserAddress.address || !getuserAddress.street ) {
+           return res.status(400).json({
+               message: 'User has to update their delivery details including state, area, address and street'
+           })
+       }
 
         let unQualifiedProducts = []
         let order_product = []
@@ -128,7 +121,7 @@ export const createOrderpreview = async (req, res) => {
 
         let delivery_fee = 0
 
-        getUsercartItems.map(item => {
+       const UpdatedProducts = getUsercartItems.map( item => {
             // Add a temporary 'totalPrice' field
 
             if (!item.product.isAvailable) {
@@ -141,14 +134,30 @@ export const createOrderpreview = async (req, res) => {
                 return
             }
 
+            const DeliveryFee = generateDeliveryFee(
+                {
+                    state: getuserAddress.state,
+                    area: getuserAddress.area,
+                    street: getuserAddress.street
+                },
+                {
+                    state: item.product.store.state,
+                    area: item.product.store.area,
+                    street: item.product.store.street
+                },
+                getallDeliveryAddress
+            )
+
             item.totalPrice = parseInt(item.quantity) * parseInt(item.product.product_price);
             order_product.push({
                 ...item._doc,
+                DeliveryFee:DeliveryFee,
                 totalPrice: parseInt(item.quantity) * parseInt(item.product.product_price)
             })
+            
             totalprice = totalprice + parseInt(item.quantity) * parseInt(item.product.product_price)
 
-            delivery_fee = delivery_fee + generateDeliveryFee( getuserAddress.area.toLowerCase() ,item.product.store.area.toLowerCase() )
+            delivery_fee = delivery_fee + DeliveryFee
 
             return item;
         });
@@ -206,7 +215,7 @@ export const createOrder = async (req, res) => {
             path: 'product',
             populate:{
                 path:'store',
-                select: '_id store_name user store_category customer_care_number address area state is_Verified',
+                select: '_id store_name user store_category customer_care_number address area state is_Verified street',
                 populate:{
                     path:'user',
                     select:'first_name last_name _id email profile_img phone_number'
@@ -217,6 +226,8 @@ export const createOrder = async (req, res) => {
         const getUsercartItems = await Cart_item.find({ user: req.user._id }).populate(populate_options);
 
         const getuserAddress = await userAddress.findOne({ user: req.user._id })
+
+        const getallDeliveryAddress = await deliveryAddress.find();
 
         if ( getUsercartItems.length < 1 ) {
             return res.status(400).json({
@@ -230,9 +241,13 @@ export const createOrder = async (req, res) => {
             })
         }
 
-        if (getuserAddress.state === '' || getuserAddress.area === '' || getuserAddress.address === '') {
+        if ( getuserAddress.state === '' || 
+             getuserAddress.area === '' || 
+             getuserAddress.address === '' || 
+             getuserAddress.street === '' ||
+             !getuserAddress.state || !getuserAddress.area || !getuserAddress.address || !getuserAddress.street ) {
             return res.status(400).json({
-                message: 'User has to set their delivery details'
+                message: 'User has to update their delivery details including state, area, address and street'
             })
         }
 
@@ -258,7 +273,24 @@ export const createOrder = async (req, res) => {
                 return
             }
 
-            delivery_fee = delivery_fee + generateDeliveryFee( getuserAddress.area.toLowerCase() ,item.product.store.area.toLowerCase() )
+            const DeliveryFee = generateDeliveryFee(
+                {
+                    state: getuserAddress.state,
+                    area: getuserAddress.area,
+                    street: getuserAddress.street
+                },
+                {
+                    state: item.product.store.state,
+                    area: item.product.store.area,
+                    street: item.product.store.street
+                },
+                getallDeliveryAddress
+            )
+
+            if ( DeliveryFee.error ) {
+                unQualifiedProducts.push({ product: item.product, quantity: item.quantity, status: 'Invalid Address', message: 'Unable to generate delivery details and fees' })
+                return
+            }
 
             item.totalPrice = parseInt(item.quantity) * parseInt(item.product.product_price);
             order_product.push({
@@ -270,6 +302,7 @@ export const createOrder = async (req, res) => {
                 isVerified: item._doc.product.isVerified,
                 state: item._doc.product.state,
                 area: item._doc.product.area,
+                street: item._doc.product.street,
                 address: item._doc.product.address,
                 quantity_available: item._doc.product.quantity_available,
                 quantity_available: item._doc.product.quantity_available,
@@ -290,13 +323,16 @@ export const createOrder = async (req, res) => {
                     address: item._doc.product.store.address,
                     area: item._doc.product.store.area,
                     state: item._doc.product.store.state,
+                    street: item._doc.product.store.street,
                     is_Verified: item._doc.product.store.is_Verified,
                 },
                 totalPrice: parseInt(item.quantity) * parseInt(item.product.product_price),
-                delivery_fee,
+                DeliveryFee,
                 quantity: item.quantity
             })
             totalprice = totalprice + parseInt(item.quantity) * parseInt(item.product.product_price)
+
+            delivery_fee = delivery_fee + DeliveryFee
 
             return item;
         });
