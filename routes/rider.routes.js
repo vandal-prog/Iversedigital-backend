@@ -7,7 +7,9 @@ import {
   getActiveOrders,
   updatedOrderproductStatus,
   finalDelivery,
-  getAllDelivered
+  getAllDelivered,
+  getRiderextraDetails,
+  getTotalRevenue
 } from "../controllers/riders_controller.js"; 
 import { verifyRiderToken } from "../middleware/jwt.js";
 
@@ -21,6 +23,8 @@ router.get("/active_order", verifyRiderToken, getActiveOrders )
 router.put("/update_order/:id", verifyRiderToken, updatedOrderproductStatus )
 router.put("/final_delivery_update/:id", verifyRiderToken, finalDelivery )
 router.get("/delivered_orders/", verifyRiderToken, getAllDelivered )
+router.get("/rider_details/", verifyRiderToken, getRiderextraDetails )
+router.get("/rider_revenue/", verifyRiderToken, getTotalRevenue )
 
 
 export default router;

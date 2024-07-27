@@ -251,6 +251,40 @@ export const editRiderdetails = async ( req, res ) => {
 
 }
 
+export const getRiderextraDetails = async (req, res) => {
+
+    try{
+
+        const populate_options = {
+            path: 'user',
+            select: 'first_name last_name _id email profile_img phone_number'
+        }
+
+        if ( req.user.role !== 'rider' && req.user.role !== 'admin' ) {
+            return res.status(403).json({
+                message:'Invalid role'
+            })
+        }
+
+        const getRiderdetails = await riderDetails.findOne({ user: req.user._id }).populate(populate_options)
+
+        return res.status(200).json({
+            data: getRiderdetails,
+            message:"Data gotten succesfully"
+        })
+
+    }
+    catch(error){
+        console.log(error)
+        return res.status(403).json({
+            has_error: true,
+            error,
+            message: 'Something went wrong'
+        });
+    }
+
+}
+
 export const getAllavailableOrders = async (req,res) => {
 
     try{
@@ -713,6 +747,39 @@ export const getAllDelivered = async ( req, res ) => {
         return res.status(200).json({
             message:'Your delivered orders were gotten successsfully',
             data: activeOrder
+        })
+
+    }
+    catch(error){
+        console.log(error)
+        return res.status(403).json({
+            has_error: true,
+            error,
+            message: 'Something went wrong'
+        });
+    }
+
+}
+
+
+export const getTotalRevenue = async ( req, res ) => {
+
+    try{
+
+        const riderRevenue = await Transactions.find({ user: req.user._id, transaction_type: 'credit', description: {$regex: 'delivery', $options: 'i' }})
+
+        let revenue = 0
+
+        for (let j = 0; j < riderRevenue.length; j++) {
+            const element = riderRevenue[j];
+            revenue = parseInt(element.amount) + revenue
+        }
+
+        return res.status(200).json({
+            message:'Your delivered orders were gotten successsfully',
+            data: {
+                total_revenue: revenue
+            }
         })
 
     }

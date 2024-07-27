@@ -2,6 +2,7 @@ import bcrypt from 'bcrypt';
 import User from "../models/user_model.js";
 import Profile from '../models/profile_model.js';
 import jwt from 'jsonwebtoken';
+import riderDetails from '../models/riders_details_model.js';
 
 export const createUser = async (req,res) => {
 
@@ -497,6 +498,8 @@ export const loginRider = async (req,res) => {
 
         const refreshToken = jwt.sign({ id: getUser.id }, process.env.JWT_KEY, { expiresIn: '7d' })
 
+        const getRiderdetails = await riderDetails.findOne({ user: getUser.id })
+
 
         const { password, ...info } = getUser._doc
 
@@ -504,6 +507,7 @@ export const loginRider = async (req,res) => {
             message: 'Login was successful',
             data:{
                 user: info,
+                rider_extra_details: getRiderdetails,
                 profile:getUserProfile,
                 token: generateToken,
                 refreshToken
