@@ -503,6 +503,147 @@ export const getRiderdetails = async (req,res) => {
     }
 }
 
+export const getallRiders = async (req,res) => {
+
+    const pageNumber = parseInt(req.query.pageNumber) || 1;
+    const pageSize = parseInt(req.query.pageSize) || 50;
+    const category = req.query.category;
+    const sub_category = req.query.sub_category;
+    const titleSearch =  req.query.search || null
+    const area =  req.query.area || null
+    const state =  req.query.state || null
+    const address =  req.query.address || null
+    const store =  req.query.store || null
+    const user =  req.query.user || null
+    const checkverified =  req.query.isVerified
+    const nin_identification_number = parseInt(req.query.nin_identification_number)
+    
+    const vehicle_type =  req.query.vehicle_type || null
+    const vehicle_color =  req.query.vehicle_color || null
+    const vehicle_plate_number =  req.query.vehicle_plate_number || null
+    const drivers_license_number =  req.query.drivers_license_number || null
+    const delivery_ratings =  parseInt(req.query.delivery_ratings) || null
+    const rider_status =  req.query.rider_status || null
+
+
+    try{
+
+        let query = {}
+
+        query.isVerified =  checkverified == 'true' ? true : false
+
+        if ( user ) {
+            query.user = new mongoose.Types.ObjectId(`${user}`)
+        }
+
+        if ( area ) {
+            query.area = { $regex: area, $options: 'i' }
+        }
+
+        if ( state ) {
+            query.state = { $regex: state, $options: 'i' }
+        }
+
+        if ( address ) {
+            query.address = { $regex: address, $options: 'i' }
+        }
+
+        if ( nin_identification_number ) {
+            query.nin_identification_number = { $regex: nin_identification_number, $options: 'i' }
+        }
+
+        if ( vehicle_type ) {
+            query.vehicle_type = { $regex: vehicle_type, $options: 'i' }
+        }
+
+        if ( vehicle_color ) {
+            query.vehicle_color = { $regex: vehicle_color, $options: 'i' }
+        }
+
+        if ( vehicle_plate_number ) {
+            query.vehicle_plate_number = { $regex: vehicle_plate_number, $options: 'i' }
+        }
+
+        if ( drivers_license_number ) {
+            query.drivers_license_number = { $regex: drivers_license_number, $options: 'i' }
+        }
+
+        if ( delivery_ratings ) {
+            query.delivery_ratings = { $regex: delivery_ratings, $options: 'i' }
+        }
+
+        if ( rider_status ) {
+            query.rider_status = { $regex: rider_status, $options: 'i' }
+        }
+
+        // const featureQuery = { 
+        //     'features.brand': 'HP', 
+        // };
+
+        const Orgquery = {  
+            $and: [
+                query
+            ]
+        };
+
+        const populate_options = [
+            { from: 'users', localField: 'user', foreignField: '_id', as: 'user' },
+        ];
+
+        const lookupStages = populate_options.map(option => ({
+            $lookup: {
+                from: option.from,
+                localField: option.localField,
+                foreignField: option.foreignField,
+                as: option.as
+            }
+        }));
+        
+
+        const aggregationResult = await riderDetails.aggregate([
+            // Convert product_price to a numerical value
+            {$match:Orgquery},
+            {
+                $facet: {
+                    paginatedData: [
+                        { $skip: (pageNumber - 1) * pageSize },
+                        { $limit: pageSize },
+                        ...lookupStages
+                    ],
+                    totalCount: [
+                        { $count: "total" }
+                    ]
+                }
+            }
+
+        ]);
+
+        
+
+        const paginatedData = aggregationResult[0]?.paginatedData;
+        const totalCount = aggregationResult[0]?.totalCount[0]?.total;
+        const totalPages = Math.ceil(totalCount / pageSize);
+        const currentPage = pageNumber > totalPages ? totalPages : pageNumber;
+
+        return res.status(200).json({
+            data: paginatedData,
+            currentPage,
+            totalPages,
+            totalCount
+        });
+
+    }
+    catch(error){
+        console.log(error)
+        return res.status(403).json({
+            has_error: true,
+            error,
+            message: 'Something went wrong'
+        });
+    }
+
+}
+
 export const approveDeclineRider = async (req,res) => {
 
     try{

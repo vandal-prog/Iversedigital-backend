@@ -14,7 +14,8 @@ import {
     createDeliveryRoute,
     getAlldeliveryRoutes,
     updateDeliveryRoute,
-    deletedeliveryRoutes
+    deletedeliveryRoutes,
+    getallRiders
 } from "../controllers/admin_controller.js";
 import { verifyAdminToken } from "../middleware/jwt.js";
 
@@ -22,6 +23,7 @@ const router = express.Router();
 
 router.put("/verify_product/:id", verifyAdminToken,approveOrdeclineProduct);
 router.get("/all_users", verifyAdminToken,getAllusers);
+router.get("/all_riders", verifyAdminToken,getallRiders);
 router.get("/user_detail/:id", verifyAdminToken,getUserdetails);
 router.get("/all_stores", verifyAdminToken,getAllstores);
 router.put("/verify_store/:id", verifyAdminToken,approveOrdeclineStore);
