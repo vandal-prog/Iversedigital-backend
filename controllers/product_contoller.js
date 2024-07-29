@@ -400,7 +400,7 @@ export const createProduct = async (req,res) => {
 
         product_price = parseInt(product_price) + 70
 
-        product_price = toString(product_price)
+        product_price = product_price.toString()
 
         const checkStore = await Store.findById(store)
 
@@ -545,7 +545,7 @@ export const editProduct = async (req,res) => {
 
             product_price = parseInt(product_price) + 70
 
-            product_price = toString(product_price)
+            product_price = product_price.toString()
 
             getProduct.product_price = product_price;
         }
