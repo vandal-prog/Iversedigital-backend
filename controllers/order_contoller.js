@@ -377,7 +377,7 @@ export const createOrder = async (req, res) => {
               },
               body: JSON.stringify({
                 amount: totalprice + delivery_fee + service_charge ,
-                redirect_url:`https://iversedigital-marketplace.vercel.app/checkout/success?id=${orderCreated.id}`,
+                redirect_url:`https://iversedigital-marketplace.vercel.app/checkout/success`,
                 currency: "NGN",
                 reference: orderCreated.id,
                 narration: `Payment for order - ${generated_order_code}`,
