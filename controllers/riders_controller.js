@@ -602,9 +602,9 @@ export const finalDelivery = async ( req, res ) => {
 
         const allOrderproducts = [...getOrder.products]
 
-        var checkingProduct = allOrderproducts.find(product => product.product_status === 'Pending' );
+        var checkingProduct = allOrderproducts.filter(product => product.product_status === 'Pending' );
 
-        if( checkingProduct ){
+        if( checkingProduct.length > 0 ){
             return res.status(403).json({
                 message:"Some products are yet to be picked up from the vendors"
             }) 
@@ -646,7 +646,7 @@ export const finalDelivery = async ( req, res ) => {
                     amount,
                     balance_after: amount,
                     balance_before: 0,
-                    description: `Sale of ${ product.product.product_title } (${product.product.quantity})`,
+                    description: `Sale of ${ product.product_title } (${product.quantity})`,
                     transaction_status: 'success',
                     transaction_type: 'credit',
                 })
