@@ -77,7 +77,7 @@ export const AdminMetrics = async (req,res) => {
 
         const total_completed_order = await Order.countDocuments({ order_status: 'Delivered' })
         const total_pending_order = await Order.countDocuments({ order_status: 'Pending' })
-        const total_users = await User.countDocuments({ isVerified: true, role: 'user' })
+        const total_users = await User.countDocuments({ role: 'user' })
         const total_rider = await riderDetails.countDocuments({ isVerified: true, isRejected: false })
         const total_pending_rider = await riderDetails.countDocuments({ isVerified: false, isRejected: false })
         const total_stores = await Store.countDocuments({ is_Verified: true, is_Rejected: false })
