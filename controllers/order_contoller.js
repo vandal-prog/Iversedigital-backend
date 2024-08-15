@@ -206,6 +206,15 @@ export const createOrder = async (req, res) => {
 
     try {
 
+        // Create a new Date object
+        const now = new Date();
+
+        // Add one day to the current date
+        now.setDate(now.getDate() + 1);
+
+        // Convert to ISO 8601 format
+        const isoString = now.toISOString();
+
         const populate_options = [
             {
                 path: 'user',
@@ -343,7 +352,7 @@ export const createOrder = async (req, res) => {
             user: req.user._id,
             products: order_product,
             product_total: totalprice,
-            service_charge:service_charge,
+            service_charge:0,
             delivery_fee,
             user_delivery_address: {
                 ...getuserAddress._doc,
@@ -355,7 +364,7 @@ export const createOrder = async (req, res) => {
             order_status: 'Created',
             delivery_details: {},
             order_code: generated_order_code,          
-            delivery_date: '2024-05-26T21:39:41.481Z'
+            delivery_date: isoString
         })
 
         const orderCreated = await createOrder.save();
