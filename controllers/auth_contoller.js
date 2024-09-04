@@ -3,6 +3,8 @@ import User from "../models/user_model.js";
 import Profile from '../models/profile_model.js';
 import jwt from 'jsonwebtoken';
 import riderDetails from '../models/riders_details_model.js';
+import { mailer } from '../config/nodemailer.js';
+import ForgetPassword from '../models/reset_password.js';
 
 export const createUser = async (req,res) => {
 
@@ -522,6 +524,181 @@ export const loginRider = async (req,res) => {
             error,
             message: 'Something went wrong'
           });
+    }
+
+}
+
+
+
+
+
+
+// Reset Password Routes
+
+export const submitEmail = async (req,res) => {
+
+    try{
+
+        const email = req.body.email;
+
+        const otp = Math.floor(100000 + Math.random() * 900000);
+
+        if ( !email ) {
+            return res.status(400).json({
+                message:"Email is required"
+            })
+        }
+
+        const createForgotPassword = new ForgetPassword({
+            email,
+            otp,
+            status: 'Created'
+        })
+
+        const createdOtp = await createForgotPassword.save()
+
+        mailer(
+            email,
+            "Forgot Password",
+            { text: otp },
+            'forget_password'
+        )
+
+        createdOtp.status = 'Pending';
+
+        await createdOtp.save()
+
+        return res.status(200).json({
+            message:`Otp was sent to ${email} successfully`,
+            data:{
+                referenceId: createdOtp.id
+            }
+        })
+
+    }
+    catch(error){
+        console.log(error)
+        return res.status(403).json({
+            has_error: true,
+            error,
+            message: 'Something went wrong'
+        });
+    }
+
+}
+
+export const VerifyOtp = async (req,res) => {
+
+    try{
+
+        const referenceId = req.body.reference_id
+        const otp = req.body.otp
+
+        if ( !referenceId || !otp ) {
+            return res.status(400).json({
+                message:"reference_id and otp are required"
+            })
+        }
+
+        const findForgotpassword = await ForgetPassword.findById(referenceId);
+
+        if ( !findForgotpassword ) {
+            return res.status(403).json({
+                message:"OTP has expired"
+            })
+        }
+
+        if ( findForgotpassword.status !== 'Pending' ) {
+            return res.status(403).json({
+                message:"OTP has expired"
+            })
+        }
+
+        if ( otp !== findForgotpassword.otp ) {
+            return res.status(403).json({
+                message:"OTP id invalid"
+            })
+        }
+
+        findForgotpassword.status = 'Success'
+
+        await findForgotpassword.save()
+
+        return res.status(200).json({
+            message:"OTP was verified successfully",
+            data: {
+                referenceId: findForgotpassword.id
+            }
+        })
+
+    }
+    catch(error){
+        console.log(error)
+        return res.status(403).json({
+            has_error: true,
+            error,
+            message: 'Something went wrong'
+          });
+    }
+
+}
+
+export const ResetPassword = async (req,res) => {
+
+    try{
+
+        const reset_password = req.body.reset_password;
+        const reference_id = req.body.reference_id;
+
+        if ( !reference_id || !reset_password ) {
+            return res.status(400).json({
+                message: 'reference_id and reset_password are required'
+            });
+        }
+
+        const findForgotpassword = await ForgetPassword.findById(reference_id);
+
+        if ( !findForgotpassword ) {
+            return res.status(403).json({
+                message:"Invalid reference id"
+            })
+        }
+
+        if ( findForgotpassword.status !== 'Success' ) {
+            return res.status(403).json({
+                message:"Invalid reference id"
+            })
+        }
+
+        const getUser = await User.findOne({ email: findForgotpassword.email });
+
+        if ( !getUser ) {
+            return res.status(403).json({
+                message:"User with this email dose not exist"
+            })
+        }
+
+        const salt = await bcrypt.genSalt(10);
+        const hashed_password = bcrypt.hashSync(reset_password, salt);
+
+        getUser.password = hashed_password;
+
+        await getUser.save();
+
+        await ForgetPassword.deleteOne(reference_id);
+
+        return res.status(200).json({
+            message:"Password was reset successfully"
+        })
+
+    }
+    catch(error){
+        console.log(error)
+        return res.status(403).json({
+            has_error: true,
+            error,
+            message: 'Something went wrong'
+        });
     }
 
 }

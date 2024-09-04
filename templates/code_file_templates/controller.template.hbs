@@ -1,0 +1,6 @@
+import { create{{titleCase name}}
+} from "../service/{{snakeCase name}}.service" export async function create{{titleCase
+  name
+}}(req, res, next){ const body = req.body; const
+{{name}}
+= await create{{titleCase name}}(body); return res.send({{name}}) }
