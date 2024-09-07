@@ -530,12 +530,12 @@ export const editProduct = async (req,res) => {
             });
         }
 
-        if ( req.user._id !== getProduct.user && req.user.role !== 'admin' ) {
-            return res.status(403).json({
-                error:'You are not authenticated to perform this action',
-                message: 'You are not authenticated to perform this action'
-            });
-        }
+        // if ( req.user._id !== getProduct.user && req.user.role !== 'admin' ) {
+        //     return res.status(403).json({
+        //         error:'You are not authenticated to perform this action',
+        //         message: 'You are not authenticated to perform this action'
+        //     });
+        // }
 
         if ( product_title ) {
             getProduct.product_title = product_title;
