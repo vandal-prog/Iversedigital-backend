@@ -410,7 +410,8 @@ export const createOrder = async (req, res) => {
 
           if ( createPaymenLink.status !== 200 && createPaymenLink.status !== 202 ) {
             return res.status(200).json({
-                message:"Unable to generate payment link"
+                message:"Unable to generate payment link",
+                data: createPaymenLink
             })
           }
 
