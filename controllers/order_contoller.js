@@ -559,7 +559,7 @@ export const getMerchantOrders = async (req,res) => {
 
     try{
 
-        const getMerchOrders = await merchantOrders.find({ user: req.user._id });
+        const getMerchOrders = await merchantOrders.find({ user: req.user._id, order_status: 'Pending' || 'Delivered' || 'In-transit' || 'Order-accepted' });
 
         return res.status(200).json({
             message:'Your orders were gotten successfully',
@@ -651,7 +651,6 @@ export const getAllOrders = async (req,res) => {
         const Orgquery = {  
             $and: [
                 query,
-                // featureQuery,
                 priceQuery
             ]
         };
