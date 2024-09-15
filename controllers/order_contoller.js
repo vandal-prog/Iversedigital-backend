@@ -535,7 +535,7 @@ export const getUserorders = async (req,res) => {
 
     try{
 
-        const getOrders = await Order.find({ user: req.user._id })
+        const getOrders = await Order.find({ user: req.user._id, order_status: 'Pending' || 'Delivered' || 'In-transit' || 'Order-accepted' })
 
         return res.status(200).json({
             message:'Your orders were gotten successfully',
