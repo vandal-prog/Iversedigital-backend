@@ -381,7 +381,7 @@ export const createOrder = async (req, res) => {
             `${process.env.PAYMENT_URL}/charges/initialize`,
                 {
                     amount: totalprice + delivery_fee + service_charge ,
-                    redirect_url:`https://marketplace.iversedigitals.com.ng/checkout/success`,
+                    redirect_url:"https://marketplace.iversedigitals.com.ng/checkout/success",
                     currency: "NGN",
                     reference: orderCreated.id,
                     narration: `Payment for order - ${generated_order_code}`,
@@ -408,21 +408,23 @@ export const createOrder = async (req, res) => {
                 }
           );
 
-        //   if ( createPaymenLink.status !== 200 && createPaymenLink.status !== 202 ) {
-        //     return res.status(200).json({
-        //         message:"Unable to generate payment link",
-        //         data: createPaymenLink
-        //     })
-        //   }
+          if ( createPaymenLink.status !== 200 && createPaymenLink.status !== 202 ) {
+            return res.status(200).json({
+                message:"Unable to generate payment link",
+                // data: createPaymenLink
+            })
+          }
 
         //   const createPaymenLinkResponse = await createPaymenLink.json();
+
+        // console.log(createPaymenLink)
 
         return res.status(200).json({
             message: 'Your order was placed successfully.',
             data: {
                 orderCreated,
                 unQualifiedProducts,
-                payment_link: createPaymenLink.response.data.checkout_url
+                payment_link: createPaymenLink.data.data.checkout_url
             }
         })
 
