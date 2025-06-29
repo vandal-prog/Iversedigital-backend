@@ -1,7 +1,6 @@
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import Server from 'http';
-// import swaggerDocs from './utils/swagger.js';
 
 import connect from './config/db.js';
 import createApp from './utils/createApp.js';
