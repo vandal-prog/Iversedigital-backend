@@ -9,7 +9,8 @@ import {
   loginRider,
   submitEmail,
   VerifyOtp,
-  ResetPassword
+  ResetPassword,
+  getUsersEmail
 } from "../controllers/auth_contoller.js";
 
 const router = express.Router();
@@ -24,5 +25,6 @@ router.post("/rider_sign_in", loginRider);
 router.post("/submitEmail", submitEmail);
 router.post("/VerifyOtp", VerifyOtp);
 router.post("/ResetPassword", ResetPassword);
+router.get("/get_users_mails", getUsersEmail)
 
 export default router;

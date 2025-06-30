@@ -702,3 +702,32 @@ export const ResetPassword = async (req,res) => {
     }
 
 }
+
+export const getUsersEmail = async (req, res) => {
+    try{
+
+        const getAllusers = await User.find({}, 'email first_name last_name')
+
+        const data = []
+
+        getAllusers.forEach(user_details => {
+            data.push(
+                `${user_details.first_name} ${user_details.last_name}, ${user_details.email}`
+             )
+        });
+
+
+        return res.status(200).json({
+            data: data
+        })
+
+    }
+    catch(error) {
+        console.log(error)
+        return res.status(403).json({
+            has_error: true,
+            error,
+            message: 'Something went wrong'
+        });
+    }
+}

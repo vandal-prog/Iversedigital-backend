@@ -10,7 +10,8 @@ import {
   GetProductReview,
   ReviewProduct,
   getProductbystore,
-  getAllproductUser
+  getAllproductUser,
+  deleteProduct
 } from "../controllers/product_contoller.js";
 import { verifyUserToken, verifyUserTokenText, verifyAdminToken } from "../middleware/jwt.js";
 
@@ -28,5 +29,6 @@ router.get("/users_react/:id", verifyUserToken, getProductLikes);
 router.post("/review/:id", verifyUserToken, ReviewProduct);
 router.get("/product_review/:id", GetProductReview);
 router.get("/store_product/:id", getProductbystore);
-
+router.delete("/delete_product/:id", verifyUserToken, deleteProduct);
+  
 export default router;
