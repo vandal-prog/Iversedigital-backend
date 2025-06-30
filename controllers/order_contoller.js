@@ -1,3 +1,4 @@
+import axios from 'axios';
 import Cart_item from '../models/cart_items_model.js';
 import Cart from '../models/cart_model.js';
 import deliveryAddress from '../models/delivery_address_model.js';
@@ -376,52 +377,54 @@ export const createOrder = async (req, res) => {
             })
         }
 
-        const createPaymenLink = await fetch(
+        const createPaymenLink = await axios.post(
             `${process.env.PAYMENT_URL}/charges/initialize`,
-            {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${process.env.PAYMENT_SECRET_KEY}`
-              },
-              body: JSON.stringify({
-                amount: totalprice + delivery_fee + service_charge ,
-                redirect_url:`https://marketplace.iversedigitals.com.ng/checkout/success`,
-                currency: "NGN",
-                reference: orderCreated.id,
-                narration: `Payment for order - ${generated_order_code}`,
-                channels: [
-                    "card",
-                    "bank_transfer"
-                ],
-                default_channel: "card",
-                customer: {
-                    name: `${ req.user.first_name } ${req.user.last_name}`,
-                    email: req.user.email
+                {
+                    amount: totalprice + delivery_fee + service_charge ,
+                    redirect_url:"https://marketplace.iversedigitals.com.ng/checkout/success",
+                    currency: "NGN",
+                    reference: orderCreated.id,
+                    narration: `Payment for order - ${generated_order_code}`,
+                    channels: [
+                        "card",
+                        "bank_transfer"
+                    ],
+                    default_channel: "card",
+                    customer: {
+                        name: `${ req.user.first_name } ${req.user.last_name}`,
+                        email: req.user.email
+                    },
+                    notification_url: "https://iversedigital-marketplace-backend.onrender.com/api/webhook/order_payment",
+                    metadata:{
+                        order_id: orderCreated.id,
+                        user: req.user._id
+                    }
                 },
-                notification_url: "https://iversedigital-marketplace-backend.onrender.com/api/webhook/order_payment",
-                metadata:{
-                    order_id: orderCreated.id,
-                    user: req.user._id
+                {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${process.env.PAYMENT_SECRET_KEY}`
+                    },
                 }
-              })
-            }
           );
 
           if ( createPaymenLink.status !== 200 && createPaymenLink.status !== 202 ) {
             return res.status(200).json({
-                message:"Unable to generate payment link"
+                message:"Unable to generate payment link",
+                // data: createPaymenLink
             })
           }
 
-          const createPaymenLinkResponse = await createPaymenLink.json();
+        //   const createPaymenLinkResponse = await createPaymenLink.json();
+
+        // console.log(createPaymenLink)
 
         return res.status(200).json({
             message: 'Your order was placed successfully.',
             data: {
                 orderCreated,
                 unQualifiedProducts,
-                payment_link: createPaymenLinkResponse.data.checkout_url
+                payment_link: createPaymenLink.data.data.checkout_url
             }
         })
 
@@ -532,7 +535,7 @@ export const getUserorders = async (req,res) => {
 
     try{
 
-        const getOrders = await Order.find({ user: req.user._id })
+        const getOrders = await Order.find({ user: req.user._id, order_status: 'Pending' || 'Delivered' || 'In-transit' || 'Order-accepted' })
 
         return res.status(200).json({
             message:'Your orders were gotten successfully',
@@ -556,7 +559,7 @@ export const getMerchantOrders = async (req,res) => {
 
     try{
 
-        const getMerchOrders = await merchantOrders.find({ user: req.user._id });
+        const getMerchOrders = await merchantOrders.find({ user: req.user._id, order_status: 'Pending' || 'Delivered' || 'In-transit' || 'Order-accepted' });
 
         return res.status(200).json({
             message:'Your orders were gotten successfully',
@@ -648,7 +651,6 @@ export const getAllOrders = async (req,res) => {
         const Orgquery = {  
             $and: [
                 query,
-                // featureQuery,
                 priceQuery
             ]
         };
